@@ -5,3 +5,4 @@
 /build/classes/kotlin/jvm/test/
 /build/js/packages/boss-serialization-mp-js-legacy/kotlin/
 /build/js/packages/boss-serialization-mp-js-legacy-test/kotlin/
+/.idea/
