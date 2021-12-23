@@ -1,14 +1,14 @@
-package net.sergeych.platform
-
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import net.sergeych.bossk.Bossk
 import net.sergeych.mptools.*
 import kotlin.test.*
 
+fun runTest(block: suspend () -> Unit) { runBlocking { block() } }
 fun BigInteger(text: String): BigInteger = BigInteger.parseString(text)
 
-internal class BossJsTest {
+internal class BossNativeTest {
 
     @Test
     fun packUnpack() {
@@ -16,32 +16,32 @@ internal class BossJsTest {
             val x = Bossk.pack("Hello")
             assertEquals("Hello", Bossk.unpack(x))
             val y = Bossk.pack(mapOf("foo" to 42, "bar" to "buzz"))
-            println("${Bossk.unpack<Any>(y)}")
+//            println("${Bossk.unpack<Any>(y)}")
         }
     }
 
     fun bytesFromHex(str: String) = str.decodeHex()
 
-    @Test
-    fun experimentWithDoubles() {
-        return runTest {
-            val d = 17.37e-111
-            println("> $d\n")
-            println("? ${longToBytes(d.toBits()).flip().toHex()}\n")
-            println("? ${Bossk.pack(d).toHex()}\n")
-            println("! 39 3C BD FC B1 F9 E2 24 29\n")
-        }
-
-    }
+//    @Test
+//    fun experimentWithDoubles() {
+//        return runTest {
+//            val d = 17.37e-111
+//            println("> $d\n")
+//            println("? ${longToBytes(d.toBits()).flip().toHex()}\n")
+//            println("? ${Bossk.pack(d).toHex()}\n")
+//            println("! 39 3C BD FC B1 F9 E2 24 29\n")
+//        }
+//
+//    }
 
     @Test
     fun testBigIntegers() {
         return runTest {
             val bi = BigInteger("97152833356252188945")
-            println("> $bi")
-            println("! F8 89 11 11 22 22 33 33 44 44 05")
-            println("> -- -- ${bi.toByteArray().flip().toHex()}")
-            println("< ${Bossk.pack(bi).toHex()}")
+//            println("> $bi")
+//            println("! F8 89 11 11 22 22 33 33 44 44 05")
+//            println("> -- -- ${bi.toByteArray().flip().toHex()}")
+//            println("< ${Bossk.pack(bi).toHex()}")
             assertEquals(
                 "F8 89 11 11 22 22 33 33 44 44 05",
                 Bossk.pack(BigInteger.parseString("97152833356252188945")).toHex()
@@ -168,30 +168,12 @@ internal class BossJsTest {
         return runTest {
             val data: List<Any> = arrayListOf(0, true, false, 1.0, -1.0, "hello!")
             assertContentEquals(data, Bossk.unpack(fromHex("36 00 61 69 11 21 33 68 65 6C 6C 6F 21")))
-            println(">> ${Bossk.unpack<Any>(fromHex("36 00 61 69 11 21 33 68 65 6C 6C 6F 21"))}\n")
+//            println(">> ${Bossk.unpack<Any>(fromHex("36 00 61 69 11 21 33 68 65 6C 6C 6F 21"))}\n")
             val list = ArrayList<Any>()
             for (x in data) list.add(x)
             val packed2 = Bossk.pack(list)
-            println(">> ${Bossk.unpack<Any>(packed2)}\n")
-//            assertEquals("36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(list).toHex())
-//            assertEquals("36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(data).toHex())
-//            assertEquals(
-//                "36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(list)
-//                    .toHex()
-//            )
-//            val iarray = ArrayList<Int>()
-//            iarray.add(10)
-//            iarray.add(20)
-//            iarray.add(1)
-//            iarray.add(2)
-//            assertEquals(iarray, Bossk.unpack(fromHex("26 50 A0 08 10")))
-//            assertEquals("26 50 A0 08 10", Bossk.pack(iarray).toHex())
-//            val ba = byteArrayOf(0, 1, 2, 3, 4, 5)
-//            val bb = arrayOf(ba, ba)
-//            val x = Bossk.unpack<List<*>>(Bossk.pack(bb))
-//            assertEquals(2, x.size)
-//            assertContentEquals(ba, (x[0] as ByteArray))
-//            assertContentEquals(ba, (x[1] as ByteArray))
+            assertContentEquals(list, Bossk.unpack<List<Any>>(packed2))
+//            println(">> ${Bossk.unpack<Any>(packed2)}\n")
         }
     }
 

@@ -1,18 +1,25 @@
-package net.sergeych.platform
+package net.sergeych.bossk
 
 import com.ionspin.kotlin.bignum.integer.BigInteger
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import net.sergeych.bossk.Bossk
-import net.sergeych.mptools.*
-import kotlin.test.*
+import net.sergeych.mptools.decodeHex
+import net.sergeych.mptools.flip
+import net.sergeych.mptools.toHex
+import java.util.*
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 fun BigInteger(text: String): BigInteger = BigInteger.parseString(text)
 
-internal class BossJsTest {
+internal class JVMBossTest {
 
     @Test
     fun packUnpack() {
-        return runTest {
+        return runBlocking {
             val x = Bossk.pack("Hello")
             assertEquals("Hello", Bossk.unpack(x))
             val y = Bossk.pack(mapOf("foo" to 42, "bar" to "buzz"))
@@ -23,20 +30,8 @@ internal class BossJsTest {
     fun bytesFromHex(str: String) = str.decodeHex()
 
     @Test
-    fun experimentWithDoubles() {
-        return runTest {
-            val d = 17.37e-111
-            println("> $d\n")
-            println("? ${longToBytes(d.toBits()).flip().toHex()}\n")
-            println("? ${Bossk.pack(d).toHex()}\n")
-            println("! 39 3C BD FC B1 F9 E2 24 29\n")
-        }
-
-    }
-
-    @Test
     fun testBigIntegers() {
-        return runTest {
+        return runBlocking {
             val bi = BigInteger("97152833356252188945")
             println("> $bi")
             println("! F8 89 11 11 22 22 33 33 44 44 05")
@@ -68,7 +63,7 @@ internal class BossJsTest {
 
     @Test
     fun testIntegers() {
-        return runTest {
+        return runBlocking {
             assertEquals(7, (Bossk.unpack<Any>("38".decodeHex()) as Number).toInt())
             assertContentEquals(bytesFromHex("38"), Bossk.pack(7))
             assertEquals(17, Bossk.unpack<Any>("88".decodeHex()) as Int)
@@ -127,7 +122,7 @@ internal class BossJsTest {
 
     @Test
     fun testStringsAndBinaries() {
-        return runTest {
+        return runBlocking {
             assertEquals("Hello", Bossk.unpack("2B 48 65 6C 6C 6F".decodeHex()))
             assertEquals("2B 48 65 6C 6C 6F", Bossk.pack("Hello").toHex())
             val bb = "00 01 02 03 04 05".decodeHex()
@@ -147,7 +142,7 @@ internal class BossJsTest {
 
     @Test
     fun testConstants() {
-        return runTest {
+        return runBlocking {
             assertEquals(0, Bossk.unpack<Any>(fromHex("00")) as Int)
             assertEquals("00", Bossk.pack(0).toHex())
             assertEquals(true, Bossk.unpack(fromHex("61")))
@@ -165,39 +160,42 @@ internal class BossJsTest {
 
     @Test
     fun testArrays() {
-        return runTest {
-            val data: List<Any> = arrayListOf(0, true, false, 1.0, -1.0, "hello!")
-            assertContentEquals(data, Bossk.unpack(fromHex("36 00 61 69 11 21 33 68 65 6C 6C 6F 21")))
-            println(">> ${Bossk.unpack<Any>(fromHex("36 00 61 69 11 21 33 68 65 6C 6C 6F 21"))}\n")
+        return runBlocking {
+            val data: List<Any> = Arrays.asList(0, true, false, 1.0, -1.0, "hello!")
+            assertEquals(
+                data, Bossk.unpack(
+                    fromHex("36 00 61 69 11 21 33 68 65 6C 6C 6F 21")
+                )
+            )
             val list = ArrayList<Any>()
             for (x in data) list.add(x)
-            val packed2 = Bossk.pack(list)
-            println(">> ${Bossk.unpack<Any>(packed2)}\n")
-//            assertEquals("36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(list).toHex())
-//            assertEquals("36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(data).toHex())
-//            assertEquals(
-//                "36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(list)
-//                    .toHex()
-//            )
-//            val iarray = ArrayList<Int>()
-//            iarray.add(10)
-//            iarray.add(20)
-//            iarray.add(1)
-//            iarray.add(2)
-//            assertEquals(iarray, Bossk.unpack(fromHex("26 50 A0 08 10")))
-//            assertEquals("26 50 A0 08 10", Bossk.pack(iarray).toHex())
-//            val ba = byteArrayOf(0, 1, 2, 3, 4, 5)
-//            val bb = arrayOf(ba, ba)
-//            val x = Bossk.unpack<List<*>>(Bossk.pack(bb))
-//            assertEquals(2, x.size)
-//            assertContentEquals(ba, (x[0] as ByteArray))
-//            assertContentEquals(ba, (x[1] as ByteArray))
+            assertEquals(
+                "36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(data)
+                    .toHex()
+            )
+            assertEquals(
+                "36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(list)
+                    .toHex()
+            )
+            val iarray = ArrayList<Int>()
+            iarray.add(10)
+            iarray.add(20)
+            iarray.add(1)
+            iarray.add(2)
+            assertEquals(iarray, Bossk.unpack(fromHex("26 50 A0 08 10")))
+            assertEquals("26 50 A0 08 10", Bossk.pack(iarray).toHex())
+            val ba = byteArrayOf(0, 1, 2, 3, 4, 5)
+            val bb = arrayOf(ba, ba)
+            val x = Bossk.unpack<List<*>>(Bossk.pack(bb))
+            assertEquals(2, x.size)
+            assertContentEquals(ba, (x[0] as ByteArray))
+            assertContentEquals(ba, (x[1] as ByteArray))
         }
     }
 
     @Test
     fun testHashes() {
-        return runTest {
+        return runBlocking {
             var res = Bossk.unpack<Map<Any, Any>>(fromHex("1F 1B 6F 6E 65 1B 74 77 6F 2B 47 72 65 61 74 61 B8 AC 69"))
             assertEquals(res.size, 3)
             assertEquals(res["one"], "two")
@@ -213,7 +211,7 @@ internal class BossJsTest {
 
     @Test
     fun testDate() {
-        return runTest {
+        return runBlocking {
             val date = Bossk.unpack<Instant>(fromHex("79 2A 24 0E 10 85"))
             assertNotNull(date)
             assertEquals(date.epochSeconds, 1375965738L)
@@ -224,11 +222,51 @@ internal class BossJsTest {
 
     @Test
     fun testDouble() {
-        return runTest {
-            assertEquals("39 3C BD FC B1 F9 E2 24 29", Bossk.pack(17.37e-111).toHex())
+        return runBlocking {
             assertEquals(17.37e-111, Bossk.unpack<Double>(fromHex("39 3C BD FC B1 F9 E2 24 29")), 1e-6)
+            assertEquals("39 3C BD FC B1 F9 E2 24 29", Bossk.pack(17.37e-111).toHex())
         }
     }
-
-
+//    @Test
+//    fun testHashes() {
+//        return runBlocking {
+//            var res = Boss
+//                .load<Any>(fromHex("1F 1B 6F 6E 65 1B 74 77 6F 2B 47 72 65 61 74 61 B8 AC 69")) as BossStruct
+//            assertEquals(res.size, 3)
+//            assertEquals(res["one"], "two")
+//            assertEquals(res["Great"], true)
+//            assertEquals(res.get(172), false)
+//            res = Boss.load<BossStruct>(Boss.dump(res))
+//            assertEquals(res.size, 3)
+//            assertEquals(res["one"], "two")
+//            assertEquals(res["Great"], true)
+//            assertEquals(res.getAs(172), false)
+//        }
+//    }
+//
+//    @Test
+//    fun readerWriter() {
+//        val x = Boss.Writer()
+//        x.write("foo")
+//        x.write(null)
+//        x.write("bar")
+//        val r = Boss.Reader(x.toByteArray())
+//        assertEquals(BossPlatform.Result.Ok("foo"), r.readResult())
+//        assertEquals(BossPlatform.Result.Ok(null), r.readResult(), )
+//        assertEquals(BossPlatform.Result.Ok("bar"), r.readResult())
+//        assertEquals(BossPlatform.Result.EOF, r.readResult())
+//        assertEquals(BossPlatform.Result.EOF, r.readResult())
+//    }
+//
+//    @Test
+//    fun simpleSerializerTest() {
+//        val value = Foobar(42, "global")
+//        val encoded = BossEncoder.encode(value)
+//        println("------------------------------------------------")
+//        println(encoded.toDump())
+//        println("------------------------------------------------")
+//        println("-- ${encoded.decodeBoss<BossStruct>()}")
+//        println("-- ${encoded.decodeBoss<Foobar>()}")
+//        assertEquals(value, encoded.decodeBoss<Foobar>())
+//    }
 }
