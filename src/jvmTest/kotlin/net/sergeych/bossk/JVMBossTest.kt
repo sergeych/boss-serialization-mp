@@ -3,25 +3,43 @@ package net.sergeych.bossk
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
+import kotlinx.datetime.toJavaInstant
 import net.sergeych.bossk.Bossk
 import net.sergeych.mptools.decodeHex
 import net.sergeych.mptools.flip
 import net.sergeych.mptools.toHex
+import net.sergeych.platform.runTest
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-fun BigInteger(text: String): BigInteger = BigInteger.parseString(text)
-
 internal class JVMBossTest {
 
     fun fromHex(str: String) = str.decodeHex()
 
     @Test
+    fun testConverter() {
+        return runTest {
+            // Boss limits time to seconds:
+            val now = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+            val x = Bossk.packWith(ZonedDateTimeConverter, mapOf("now" to now))
+            val t = Bossk.unpackWith<Map<String,ZonedDateTime>>(ZonedDateTimeConverter,x)["now"]
+            assertEquals(now, t)
+            val t2 = Bossk.unpack<Map<String,Instant>>(x)["now"]
+            assertEquals(now.toEpochSecond(), t2?.epochSeconds)
+        }
+    }
+
+    @Test
     fun testArrays() {
-        return runBlocking {
+        // JVM target distinguish long and int from double, so the test for it is more precise
+        // than, ay, for JVM:
+        return runTest {
             val data: List<Any> = Arrays.asList(0, true, false, 1.0, -1.0, "hello!")
             assertEquals(
                 data, Bossk.unpack(

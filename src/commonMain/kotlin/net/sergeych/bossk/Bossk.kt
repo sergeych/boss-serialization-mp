@@ -17,7 +17,50 @@ internal fun assert(condition: Boolean, text: String) {
     if (!condition) throw AssertionFailedException(text)
 }
 
+/**
+ * Multiplatform Boss codec for Kotlin based on channels, coroutine friendly and could also be used to process
+ * unlimited binary data streams (through in Channel) without framing. This version also support platform-dependent
+ * data conversion to Boss primitives.
+ *
+ * Boss is a bit-effective binary packing format that uses optimized for size data format, having compact
+ * representation for frequently used values and caching for repreating objects. It supports following types:
+ *
+ * - Integer, longs, arbitrary-length integers (BigIntegers), which are automatically packed to use only necessary
+ *   number of bytes to store
+ * - doubles (with effective encoding of 0 and ±1.0)
+ * - strings (using UTF-8) with caching
+ * - binary data, effectively packed (no deviations like base64)
+ * - time Instants, rounded to second but otherwise unlimited (as long as it fits Instant data field)
+ * - lists of such objects
+ * - maps where both keys and values are any objects above (still we recommend to limit to key types that are
+ *   supported everywhere, as, for example, javascript Map can't use arbitrary object as a key in a correct way.
+ *
+ * To convert some objects to and from binary representation, use [Bossk.pack], [Bossk.packWith] and [Boss.unpackWith]
+ * and [Bossk.unpack] respectively.
+ *
+ * Bossk also support streaming mode over kotlin `Channel<Byte>`, see [Bossk.Reader] and [Bossk.Writer]
+ */
 object Bossk {
+
+    /**
+     * Interface to filter (and possibly convert) source objects. Could be used to automatically convert
+     * user domain objects to boss-compatible data formats and vice versa.
+     */
+    interface Converter {
+        /**
+         * called _before boss serialization_, allowing to convert user field types to boiss supported, e.g.
+         * ZonedDateTime on JVM could be autpconverted to multiplatofrm `kotlinx.datetime.Instant`, or even
+         * perform complex serialization of objects to structures (hashes) with some type tag.
+         */
+        fun toBoss(source: Any?): Any?
+
+        /**
+         * Called _after boss serialization_ allowing to convert boss field types to user domain objects.
+         * e.g. on JVM target it can convert `kotlinx.datetime.Instant` boss uses internally to, for example,
+         * `ZonedDateTime`, or perform complex object deserialization from a cache.
+         */
+        fun fromBoss(packed: Any?): Any?
+    }
 
     private const val TYPE_INT = 0
     private const val TYPE_EXTRA = 1
@@ -31,7 +74,7 @@ object Bossk {
     private const val XT_DONE = 2 // double 1.0
     private const val XT_DMINUSONE = 4 // double -1.0
 
-    // TFLOAT = 6; // 32-bit IEEE float
+    // TFLOAT = 6; // 32-bit IEEE float we do not use now
     private const val XT_DOUBLE = 7 // 64-bit IEEE float
     private const val XT_TTRUE = 12
     private const val XT_FALSE = 13
@@ -39,77 +82,31 @@ object Bossk {
     // static private final int TCOMPRESSED = 14;
     private const val XT_TIME = 15
     private const val XT_STREAM_MODE = 16
-// static private final int TOBJECT = 8; // object record
-// TMETHOD = 9; // instance method
-// TFUNCTION = 10; // callable function
-// TGLOBREF = 11; // global reference
 
-    /**
-     * Encodes one or more objects one by one. It will need corresponding number of read calls
-     *
-     * @param objects objects one by one
-     *
-     * @return binary data as plain array
-     */
-    suspend fun pack(vararg objects: Any?): ByteArray {
+    // These modes are not used as programming language (e.g. python) binfings are moved out from
+    // the main BOSS specification in 2009, but are still available for extension"
+    // static private final int TOBJECT = 8; // object record
+    // TMETHOD = 9; // instance method
+    // TFUNCTION = 10; // callable function
+    // TGLOBREF = 11; // global reference
+
+    suspend fun packWith(converter: Converter?, obj: Any?): ByteArray {
         return try {
-            ByteArrayWriter().also { for (o in objects) it.writeObject(o) }.toByteArray()
+            ByteArrayWriter(converter=converter).also { it.writeObject(obj) }.toByteArray()
         } catch (ex: Exception) {
             throw TypeException("Boss can't dump this object", ex)
         }
     }
 
-    /**
-     * Load boss-encoded object tree from binary data. See [BiAdapter] on how to serialize any types.
-     *
-     * @param bytes data to load
-     *
-     * @return root object
-     */
-    suspend fun <T> unpack(source: ByteArray): T = Reader(source.openChannel()).read()
+    // works:
+    // suspend fun pack(vararg obj: Any?): ByteArray = packWith(null, obj[0])
+    // Fails!
+    suspend fun pack(obj: Any?): ByteArray = packWith(null, obj)
 
-    /**
-     * Load boss-encoded object tree from binary data. See [BiAdapter] on how to serialize any types.
-     *
-     * @param data binary data to decode
-     *
-     * @return root object
-     */
-//    fun <T> load(data: ByteArray?): T {
-//        return try {
-//            net.sergeych.boss.Boss.Reader(java.io.ByteArrayInputStream(data)).read<Any>()
-//        } catch (e: java.io.IOException) {
-//            throw java.lang.IllegalArgumentException("Boss: can't parse data", e)
-//        }
-//    }
-//
-//    fun <T> load(data: ByteArray?, mapper: BiDeserializer?): T {
-//        return try {
-//            net.sergeych.boss.Boss.Reader(java.io.ByteArrayInputStream(data), mapper).read<Any>()
-//        } catch (e: java.io.IOException) {
-//            throw java.lang.IllegalArgumentException("Boss: can't parse data", e)
-//        }
-//    }
+    suspend fun <T> unpackWith(converter: Converter?,source: ByteArray): T = Reader(source.openChannel(),converter).read()
 
-    /**
-     * Load boss-encoded object and cast ti to [Binder].
-     *
-     * @param data
-     *
-     * @return
-     */
-//    fun unpack(data: ByteArray?): net.sergeych.tools.Binder {
-//        return net.sergeych.boss.Boss.load<net.sergeych.tools.Binder>(data)
-//    }
+    suspend fun <T> unpack(source: ByteArray): T = unpackWith(null, source)
 
-//    fun trace(packed: ByteArray?) {
-//        val obj: Any = net.sergeych.boss.Boss.load<Any>(packed)
-//        println(net.sergeych.boss.Boss.traceObject("", obj))
-//    }
-//
-//    fun trace(`object`: Any?) {
-//        println(net.sergeych.boss.Boss.traceObject("", `object`))
-//    }
 
     private fun traceObject(prefix: String, obj: Any?): String = when (obj) {
         is ByteArray -> {
@@ -166,7 +163,8 @@ object Bossk {
      * @author sergeych
      */
     open class Writer(
-        private val out: SendChannel<Byte>
+        private val out: SendChannel<Byte>,
+        private val converter: Converter? = null
     ) {
         //        private val out: java.io.OutputStream
         private var cache = HashMap<Any?, Int>()
@@ -270,7 +268,8 @@ object Bossk {
         }
 
 
-        private suspend fun put(obj: Any?) {
+        private suspend fun put(data: Any?) {
+            val obj = converter?.let { it.toBoss(data)} ?: data
             when (obj) {
                 is BigInteger -> {
                     if (obj.signum() >= 0) writeHeader(TYPE_INT, obj)
@@ -386,12 +385,16 @@ object Bossk {
         }
     }
 
-    class ByteArrayWriter(private val channel: ByteArrayOutputChannel = ByteArrayOutputChannel()) : Writer(channel) {
+    class ByteArrayWriter(
+        private val channel: ByteArrayOutputChannel = ByteArrayOutputChannel(),
+        private val converter: Converter? = null
+    ) : Writer(channel, converter) {
         suspend fun toByteArray(): ByteArray = channel.toByteArray()
     }
 
     class Reader(
         private val channel: ReceiveChannel<Byte>,
+        private val converter: Converter? = null
     ) {
         protected var treeMode = true
         protected var showTrace = false
@@ -484,7 +487,7 @@ object Bossk {
 
         private suspend fun <T> get(): T {
             val h = readHeader()
-            return when (h.code) {
+            val result = when (h.code) {
                 TYPE_INT -> //                    trace("Int: " + h.smallestNumber(false));
                     h.smallestNumber(false) as T
                 TYPE_NINT -> return h.smallestNumber(true) as T
@@ -514,6 +517,7 @@ object Bossk {
                 TYPE_EXTRA -> parseExtra(h.value.toInt()) as T
                 else -> throw FormatException("Bad BOSS header")
             }
+            return converter?.let { it.fromBoss(result) as T } ?: result
         }
 
         private suspend fun <T> readObject(h: Header): T {
