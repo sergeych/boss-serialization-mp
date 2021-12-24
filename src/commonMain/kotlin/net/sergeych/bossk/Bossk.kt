@@ -100,7 +100,8 @@ object Bossk {
 
     // works:
     // suspend fun pack(vararg obj: Any?): ByteArray = packWith(null, obj[0])
-    // Fails!
+
+    // fails:
     suspend fun pack(obj: Any?): ByteArray = packWith(null, obj)
 
     suspend fun <T> unpackWith(converter: Converter?,source: ByteArray): T = Reader(source.openChannel(),converter).read()
