@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform") version "1.6.10"
     kotlin("plugin.serialization") version "1.6.10"
+    `maven-publish`
 }
 
 
@@ -41,6 +42,8 @@ kotlin {
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
 
+    val publicationsFromMainHost =
+        listOf(jvm(), js()).map { it.name } + "kotlinMultiplatform"
 
     sourceSets {
         val commonMain by getting {
@@ -76,4 +79,31 @@ kotlin {
         val nativeTest by getting {
         }
     }
+
+    publishing {
+        publications {
+
+            matching { it.name in publicationsFromMainHost }.all {
+                val targetPublication = this@all
+                tasks.withType<AbstractPublishToMaven>()
+                    .matching { it.publication == targetPublication }
+                    .configureEach { onlyIf { findProperty("isMainHost") == "true" } }
+            }
+
+//            create<MavenPublication>("maven") {
+//                from(components["java"])
+//            }
+        }
+        repositories {
+            maven {
+                url = uri("https://maven.universablockchain.com/")
+                credentials {
+                    username = System.getenv("maven_user")
+                    password = System.getenv("maven_password")
+                }
+            }
+        }
+    }
 }
+
+
