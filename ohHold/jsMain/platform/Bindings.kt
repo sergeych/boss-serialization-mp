@@ -1,6 +1,6 @@
 package net.sergeych.platform
 
-
+// USe it as a sample how to write unicrypto bindings
 @JsModule("unicrypto")
 @JsNonModule
 external class Unicrypto {

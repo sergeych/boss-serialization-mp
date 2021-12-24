@@ -25,11 +25,8 @@ fun <T> List<T>.longAt(index: Int) = (get(index) as Number?)?.toLong()
  * Otherwise, throw exception.
  * @throws ClassCastException if the element at index can't be converted to a ByteArray
  */
-fun <T> List<T>.bytesAt(index: Int): ByteArray? =
-    get(index)?.let { makeByteArray(it) }
+fun <T> List<T>.bytesAt(index: Int): ByteArray = this[index] as ByteArray
 
-
-expect fun makeByteArray(source: Any): ByteArray
 
 /**
  * Get element at index and return it if it is a `BossStruct` instance, otherwise convert it to

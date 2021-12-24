@@ -3,6 +3,7 @@
 
 package net.sergeych.boss_serialization_mp
 
+import kotlinx.datetime.Instant
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.AbstractEncoder
@@ -11,14 +12,13 @@ import kotlinx.serialization.internal.NamedValueEncoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import net.sergeych.boss_serialization.BossDecoder
-import net.sergeych.platform.Boss
-import net.sergeych.platform.BossPlatform
+import net.sergeych.bossk.Bossk
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 /**
  * Please do not instantiate this class directly. Use instead a companion object's [encode] method
- * or extension function on BossPlatform.Output [BossPlatform.Output.encode]
+ * or extension function on [Bossk.Writer]
  */
 @OptIn(InternalSerializationApi::class)
 @ExperimentalSerializationApi
@@ -42,6 +42,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         when (serializer.descriptor) {
             BossDecoder.bossStructSerializerDescriptor,
             ZonedDateTimeSerializer.descriptor,
+                Instant.serializer().descriptor,
             BossDecoder.byteArraySerializerDescriptor -> {
                 currentObject[currentTag] = value
                 popTag()
@@ -73,9 +74,8 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         /**
          * Encode some `@Serializable` value to a packed binary boss data
          */
-        inline fun <reified T> encode(value: T): ByteArray {
-            println("-000000")
-            return Boss.Writer().encode(value).toByteArray()
+        inline suspend fun <reified T> encode(value: T): ByteArray {
+            return Bossk.ByteArrayWriter().also { it.encode(value) }.toByteArray()
         }
 
         /**
@@ -103,19 +103,13 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
  * Encode and write object to a `Boss.Writer`
  */
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T> BossPlatform.Output.encode(value: T): BossPlatform.Output {
-    println(">?>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    println("---qq----")
+inline suspend fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
     if (value is BossStruct)
         write(value)
     else {
-        println("---22----")
         val serializer: KSerializer<T> = EmptySerializersModule.serializer<T>()
-        println("---33----")
         val bs = BossStruct()
-        println("---44----")
         BossEncoder(bs).encodeSerializableValue(serializer, value)
-        println("---55---- $bs")
         write(bs.toMap())
     }
     return this

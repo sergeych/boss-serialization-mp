@@ -2,6 +2,7 @@
 
 package net.sergeych.boss_serialization
 
+import kotlinx.datetime.Instant
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
@@ -11,10 +12,8 @@ import kotlinx.serialization.internal.NamedValueDecoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import net.sergeych.boss_serialization_mp.BossStruct
 import net.sergeych.boss_serialization_mp.ZonedDateTimeSerializer
-import net.sergeych.boss_serialization_mp.makeByteArray
-import net.sergeych.platform.Boss
-import net.sergeych.platform.BossPlatform
-import net.sergeych.platform.readStruct
+import net.sergeych.bossk.Bossk
+import net.sergeych.mptools.openChannel
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -23,7 +22,7 @@ import kotlin.reflect.typeOf
  * should be a map.
  *
  * Normally, you use variants of [decodeFrom] rather than instantiating this class directly or
- * extension functions [ByteArray.decodeBoss] and [Boss.Reader.deserialize].
+ * extension functions [ByteArray.decodeBoss] and [Bossk.Reader.read].
  */
 @ExperimentalSerializationApi
 @OptIn(InternalSerializationApi::class)
@@ -69,7 +68,8 @@ class BossDecoder(
     override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T =
         when (deserializer.descriptor) {
             ZonedDateTimeSerializer.descriptor -> decodeTaggedValue(currentTag) as T
-            byteArraySerializerDescriptor -> makeByteArray(decodeTaggedValue(currentTag)) as T
+            byteArraySerializerDescriptor -> decodeTaggedValue(currentTag) as T
+            Instant.serializer().descriptor -> decodeTaggedValue(currentTag) as T
             bossStructSerializerDescriptor -> {
                 BossStruct(decodeTaggedValue(currentTag) as MutableMap<String, @Contextual Any?>) as T
             }
@@ -111,23 +111,23 @@ class BossDecoder(
         /**
          * Decode (deserialize) from a reader. The return type could be specified as nullable.
          */
-        inline fun <reified T> decodeFrom(br: BossPlatform.Input): T =
+        suspend inline fun <reified T> decodeFrom(br: Bossk.Reader): T =
             decodeFrom(typeOf<T>(), br)
 
-        fun <T: Any> decodeFrom(cls: KType,br: BossPlatform.Input): T {
-            if( cls == typeOf<BossStruct>() )
-                return br.readStruct() as T
+        suspend fun <T: Any> decodeFrom(cls: KType,br: Bossk.Reader): T {
+            if( cls == typeOf<Map<*,*>>() )
+                return br.read() as T
             val d = EmptySerializersModule.serializer(cls)
-            val decoder = BossDecoder(br.readStruct(), d.descriptor)
+            val decoder = BossDecoder(br.read(), d.descriptor)
             return d.deserialize(decoder) as T
         }
 
         /**
          * Decode (deserialize) from a map, usually, returned by some boss decoder; for example, if you
-         * have an array with different items in it, you can get ot with [loadBossList] and then decode
+         * have an array with different items in it, you can get ot with [Bossk.unpack] and then decode
          * each element with proper type:
          * ~~~
-         * val list = loadBossList(someData)
+         * val list = Bossk.unpack(someData) as List<Any>
          * val element5: Element5 = BossDecoder.decodeFrom(list.structAt(5))
          * val element3: Element3 = BossDecoder.decodeFrom(list.structAt(3))
          * ~~~
@@ -150,8 +150,8 @@ class BossDecoder(
         /**
          * Decode (deserialize) from a byte array. The return type could be specified as nullable.
          */
-        inline fun <reified T> decodeFrom(binaryData: ByteArray): T {
-            return decodeFrom(Boss.Reader(binaryData))
+        inline suspend fun <reified T> decodeFrom(binaryData: ByteArray): T {
+            return decodeFrom(Bossk.Reader(binaryData.openChannel()))
         }
     }
 }
@@ -195,7 +195,7 @@ internal class BossListDecoder(
     override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T =
         when (deserializer.descriptor) {
             ZonedDateTimeSerializer.descriptor -> decodeValue() as T
-            BossDecoder.byteArraySerializerDescriptor -> makeByteArray(decodeValue()) as T
+            BossDecoder.byteArraySerializerDescriptor -> decodeValue() as T
             else -> super.decodeSerializableValue(deserializer)
         }
 

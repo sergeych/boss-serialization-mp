@@ -11,8 +11,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import net.sergeych.boss_serialization.BossDecoder
-import net.sergeych.platform.Boss
-import net.sergeych.platform.BossPlatform
+import net.sergeych.bossk.Bossk
 
 /**
  * Serialization for ZonedDateTime. In Boss serialization, it falls back to Boss-native datetime type, otherwise
@@ -34,30 +33,19 @@ object ZonedDateTimeSerializer : KSerializer<Instant> {
     override fun deserialize(decoder: Decoder): Instant = Instant.fromEpochSeconds(decoder.decodeLong())
 }
 
-/**
- * Unpack to list a BOSS-packed binary
- */
-fun loadBossList(packed: ByteArray): List<Any?> {
-    return Boss.unpack(packed) as List<Any?>
-}
 
 /**
  * Decode boss object from this binary data into a given class instance
  */
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T> ByteArray.decodeBoss(): T = BossDecoder.decodeFrom<T>(this)
-
-/**
- * Convenience method: decode boss binary data to struct.
- */
-fun ByteArray.decodeBossStruct(): BossStruct = BossStruct(Boss.unpack(this) as MutableMap<String, Any?>)
+inline suspend fun <reified T> ByteArray.decodeBoss(): T = BossDecoder.decodeFrom(this)
 
 /**
  * read and deserialize object from boss reader
  */
 @Suppress("unused")
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T> BossPlatform.Input.deserialize(): T = BossDecoder.decodeFrom(this)!!
+inline suspend fun <reified T> Bossk.Reader.deserialize(): T = BossDecoder.decodeFrom(this)!!
 
 /**
  * ASCII dump representation for a binary data, with address, hex and ascii fields, following the

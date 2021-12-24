@@ -35,7 +35,7 @@ internal fun assert(condition: Boolean, text: String) {
  * - maps where both keys and values are any objects above (still we recommend to limit to key types that are
  *   supported everywhere, as, for example, javascript Map can't use arbitrary object as a key in a correct way.
  *
- * To convert some objects to and from binary representation, use [Bossk.pack], [Bossk.packWith] and [Boss.unpackWith]
+ * To convert some objects to and from binary representation, use [Bossk.pack], [Bossk.packWith] and [Bossk.unpackWith]
  * and [Bossk.unpack] respectively.
  *
  * Bossk also support streaming mode over kotlin `Channel<Byte>`, see [Bossk.Reader] and [Bossk.Writer]
@@ -92,19 +92,21 @@ object Bossk {
 
     suspend fun packWith(converter: Converter?, obj: Any?): ByteArray {
         return try {
-            ByteArrayWriter(converter=converter).also { it.writeObject(obj) }.toByteArray()
+            ByteArrayWriter(converter = converter).also { it.writeObject(obj) }.toByteArray()
         } catch (ex: Exception) {
             throw TypeException("Boss can't dump this object", ex)
         }
     }
 
-    // works:
-    // suspend fun pack(vararg obj: Any?): ByteArray = packWith(null, obj[0])
+    // dupe of the oackWith to avoid bug in JS IR compiler KT-50505
+    suspend fun pack(obj: Any?): ByteArray = try {
+        ByteArrayWriter().also { it.writeObject(obj) }.toByteArray()
+    } catch (ex: Exception) {
+        throw TypeException("Boss can't dump this object", ex)
+    }
 
-    // fails:
-    suspend fun pack(obj: Any?): ByteArray = packWith(null, obj)
-
-    suspend fun <T> unpackWith(converter: Converter?,source: ByteArray): T = Reader(source.openChannel(),converter).read()
+    suspend fun <T> unpackWith(converter: Converter?, source: ByteArray): T =
+        Reader(source.openChannel(), converter).read()
 
     suspend fun <T> unpack(source: ByteArray): T = unpackWith(null, source)
 
@@ -163,24 +165,14 @@ object Bossk {
      *
      * @author sergeych
      */
+    @Suppress("unused")
     open class Writer(
         private val out: SendChannel<Byte>,
         private val converter: Converter? = null
     ) {
-        //        private val out: java.io.OutputStream
         private var cache = HashMap<Any?, Int>()
         private var treeMode = true
-//        private val biSerializer: BiSerializer?
-        /**
-         * Creates writer to write to the output stream. Upon creation writer is alwais in tree mode.
-         *
-         * @param outputStream See [.setStreamMode]
-         */
-        /**
-         * Creates writer to write to the output stream. Upon creation writer is alwais in tree mode.
-         *
-         * @param outputStream See [.setStreamMode]
-         */
+
         init {
             cache.put(null, 0)
         }
@@ -194,9 +186,8 @@ object Bossk {
          * Stream more pushes the special record to the stream so the decoder [Reader] will know the more. Before
          * entering stream mode it is theoretically possible to write some cached trees, but this feature is yet
          * untested.
-         *
-         * @throws IOException
          */
+        @Suppress("unused")
         suspend fun setStreamMode() {
             cache.clear()
             cache.put(null, 0)
@@ -211,8 +202,6 @@ object Bossk {
          * @param objects any number of Objects known to BOSS
          *
          * @return this Writer instance
-         *
-         * @throws IOException
          */
         suspend fun write(vararg objects: Any): Writer {
             for (x in objects) put(x)
@@ -226,8 +215,6 @@ object Bossk {
          * @param obj the root object to encode
          *
          * @return this instance to allow chaining calls
-         *
-         * @throws IOException
          */
         suspend fun writeObject(obj: Any?): Writer {
 //            if (biSerializer != null && !(obj is Number || obj is String || obj is java.time.ZonedDateTime
@@ -270,7 +257,7 @@ object Bossk {
 
 
         private suspend fun put(data: Any?) {
-            val obj = converter?.let { it.toBoss(data)} ?: data
+            val obj = converter?.toBoss(data) ?: data
             when (obj) {
                 is BigInteger -> {
                     if (obj.signum() >= 0) writeHeader(TYPE_INT, obj)
@@ -279,7 +266,7 @@ object Bossk {
                 is Number -> {
                     // n JS we can't test it for "is Long" or "is Int"
                     val d = obj.toDouble()
-                    if ( (obj is Long || obj is Int) && d == obj.toLong().toDouble()) {
+                    if ((obj is Long || obj is Int) && d == obj.toLong().toDouble()) {
                         if (obj.toLong() >= 0)
                             writeHeader(TYPE_INT, obj.toLong())
                         else
@@ -388,11 +375,12 @@ object Bossk {
 
     class ByteArrayWriter(
         private val channel: ByteArrayOutputChannel = ByteArrayOutputChannel(),
-        private val converter: Converter? = null
+        converter: Converter? = null
     ) : Writer(channel, converter) {
         suspend fun toByteArray(): ByteArray = channel.toByteArray()
     }
 
+    @Suppress("unused")
     class Reader(
         private val channel: ReceiveChannel<Byte>,
         private val converter: Converter? = null
@@ -400,12 +388,10 @@ object Bossk {
         protected var treeMode = true
         protected var showTrace = false
         private var cache = mutableListOf<Any>()
-        private val maxCacheEntries = 0
-        private val maxStringSize = 0
 
-        suspend fun traceObject() {
-            println(readHeader())
-        }
+//        suspend fun traceObject() {
+//            println(readHeader())
+//        }
 
         private suspend fun readHeader(): Header {
             val b = readByte()
@@ -468,10 +454,6 @@ object Bossk {
             if (showTrace) println(s)
         }
 
-        private fun traceCache() {
-            trace("Cache: " + cache.toString())
-        }
-
         /**
          * Read next object from the stream
          *
@@ -480,11 +462,6 @@ object Bossk {
          * @return next object casted to (T)
         </T> */
         suspend fun <T> read(): T = get()
-//            val x = get<Any>()!!
-//                x as T
-//            return if (deserializer == null || !(x is net.sergeych.tools.Binder || x is Collection<*>)) x as T else deserializer.deserialize<T, Any>(
-//            )
-//    }
 
         private suspend fun <T> get(): T {
             val h = readHeader()
@@ -531,7 +508,9 @@ object Bossk {
             return dict as T
         }
 
-        suspend fun readInt(): Int = (get() as Number).toInt()
+        suspend fun readInt() = (get() as Number).toInt()
+        suspend fun readLong() = (get() as Number).toLong()
+        suspend fun readDouble() = (get() as Number).toDouble()
 
         private fun cacheObject(obj: Any) {
             if (treeMode) cache.add(obj) else {
