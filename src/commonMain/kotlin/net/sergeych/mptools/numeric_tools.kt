@@ -1,9 +1,11 @@
 package net.sergeych.mptools
 
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import net.sergeych.bossk.FormatException
 import net.sergeych.bossk.TypeException
 import kotlin.math.min
 
+fun BigInteger(text: String): BigInteger = BigInteger.parseString(text)
 
 /**
  * Convert long to LE bytes

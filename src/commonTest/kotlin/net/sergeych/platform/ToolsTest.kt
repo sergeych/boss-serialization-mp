@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 
 private const val l = 0xf1a2b374e02
 
-internal class CommonToolsTest {
+internal class ToolsTest {
 
     @Test
     fun formatHex() {
@@ -28,7 +28,7 @@ internal class CommonToolsTest {
     }
 
     @Test
-    fun toFlow() {
+    fun toChannel() {
         return runTest {
             val source = byteArrayOf(5, 4, 3, 2, 1, 2, 3, 4, 5)
             val x = source.openChannel()
@@ -44,7 +44,8 @@ internal class CommonToolsTest {
     @Test
     fun arrayToHex() {
         val source = byteArrayOf(1,2, -2, -1)
-        println(source.toHex())
+//        println(source.toHex())
+        assertEquals("01 02 FE FF", source.toHex())
     }
 
 }
