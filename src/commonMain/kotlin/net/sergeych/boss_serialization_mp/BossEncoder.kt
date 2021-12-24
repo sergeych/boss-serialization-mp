@@ -1,4 +1,3 @@
-@file:UseSerializers(ZonedDateTimeSerializer::class)
 @file:Suppress("EXPERIMENTAL_IS_NOT_ENABLED")
 
 package net.sergeych.boss_serialization_mp
@@ -12,6 +11,8 @@ import kotlinx.serialization.internal.NamedValueEncoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import net.sergeych.boss_serialization.BossDecoder
+import net.sergeych.boss_serialization.SpecificConverter
+import net.sergeych.boss_serialization_mp.BossEncoder.Companion.encode
 import net.sergeych.bossk.Bossk
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -39,10 +40,14 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
     }
 
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
+        for( c in SpecificConverter.converters() ) if( c.descriptor == serializer.descriptor ) {
+            currentObject[currentTag] = c.serialize(value as Any)
+            popTag()
+            return
+        }
         when (serializer.descriptor) {
             BossDecoder.bossStructSerializerDescriptor,
-            ZonedDateTimeSerializer.descriptor,
-                Instant.serializer().descriptor,
+            Instant.serializer().descriptor,
             BossDecoder.byteArraySerializerDescriptor -> {
                 currentObject[currentTag] = value
                 popTag()

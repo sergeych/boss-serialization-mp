@@ -11,11 +11,22 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.internal.NamedValueDecoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import net.sergeych.boss_serialization_mp.BossStruct
-import net.sergeych.boss_serialization_mp.ZonedDateTimeSerializer
 import net.sergeych.bossk.Bossk
 import net.sergeych.mptools.openChannel
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
+
+interface SpecificConverter {
+    val descriptor: SerialDescriptor
+    fun serialize(source: Any): Any
+    fun deserialize(bossPacked: Any): Any
+
+    companion object {
+        fun converters(): Iterable<SpecificConverter> = platfrmSpecificConverters
+    }
+}
+
+expect val platfrmSpecificConverters: Iterable<SpecificConverter>
 
 /**
  * Deserialization of the boss-encoded object. Note that root object passed to the instance
@@ -65,9 +76,13 @@ class BossDecoder(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T =
-        when (deserializer.descriptor) {
-            ZonedDateTimeSerializer.descriptor -> decodeTaggedValue(currentTag) as T
+    override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T {
+        for( c in SpecificConverter.converters() ) {
+            if( c.descriptor == deserializer.descriptor ) {
+                return c.deserialize(decodeTaggedValue(currentTag)) as T
+            }
+        }
+        return when (deserializer.descriptor) {
             byteArraySerializerDescriptor -> decodeTaggedValue(currentTag) as T
             Instant.serializer().descriptor -> decodeTaggedValue(currentTag) as T
             bossStructSerializerDescriptor -> {
@@ -75,6 +90,7 @@ class BossDecoder(
             }
             else -> super.decodeSerializableValue(deserializer)
         }
+    }
 
     override fun decodeTaggedNotNullMark(tag: String): Boolean =
         tag in currentObject && currentObject[tag] != null
@@ -192,12 +208,17 @@ internal class BossListDecoder(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T =
-        when (deserializer.descriptor) {
-            ZonedDateTimeSerializer.descriptor -> decodeValue() as T
+    override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T {
+        for( c in SpecificConverter.converters() ) {
+            if( c.descriptor == deserializer.descriptor ) {
+                return c.deserialize(decodeValue()) as T
+            }
+        }
+        return when (deserializer.descriptor) {
             BossDecoder.byteArraySerializerDescriptor -> decodeValue() as T
             else -> super.decodeSerializableValue(deserializer)
         }
+    }
 
     @Suppress("UNCHECKED_CAST")
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
