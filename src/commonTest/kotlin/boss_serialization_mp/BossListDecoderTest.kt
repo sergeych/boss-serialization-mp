@@ -8,12 +8,26 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.boss_serialization_mp.BossEncoder
+import net.sergeych.boss_serialization_mp.decodeBoss
+import net.sergeych.mptools.toDump
 import net.sergeych.mptools.truncateToSeconds
 import net.sergeych.platform.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 import kotlin.test.assertIs
+
+@Serializable
+sealed class TBase
+
+@Serializable
+class TA(val a: Int): TBase()
+
+@Serializable
+class TB(val b: String): TBase()
+
+@Serializable
+class TTest(val list: List<TBase>)
 
 internal class BossListDecoderTest {
 
@@ -36,6 +50,20 @@ internal class BossListDecoderTest {
 //            println(y)
             assertEquals(x, y)
             assertEquals(x, BossDecoder.decodeFrom<FBI>(BossEncoder.encode(x)))
+        }
+    }
+
+    @Test
+    fun serializeSealed() {
+        return runTest {
+            val x = TTest(listOf(TA(42), TB("Hello")))
+            val b = BossEncoder.encode(x)
+            println(b.toDump())
+            val y = b.decodeBoss<TTest>()
+            println(y.list[0])
+            println(y.list[1])
+            assertEquals(42, (y.list[0] as TA).a)
+            assertEquals("Hello", (y.list[1] as TB).b)
         }
     }
 }

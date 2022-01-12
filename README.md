@@ -14,6 +14,10 @@ Due to multiplatform nature it has several differences from java version:
 - type for Boss's datetime is `kotlinx.datetime.Instant`: crossplatofrm datetime library.
 - type for Boss's BigInteger is `com.ionspin.kotlin.bignum.integer.BigInteger`: it is multiplatform and as close to java/kotlin BigInteger as I was able to find
 
+## Recent updates
+
+- 0.0.2-SNAPSHOT: added selaed class polymorphism support
+
 ## Crossplatorm notes
 
 On JS platofrm when encoding it is not always possible to distinguish between double and integer/long values, so +1.0 will be encoded to int +1, while 1.211 will be rpoperly encoded to a double. Decoding works well.

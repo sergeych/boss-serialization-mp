@@ -4,6 +4,7 @@ package net.sergeych.boss_serialization
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractDecoder
@@ -225,7 +226,7 @@ internal class BossListDecoder(
         if (!values.hasNext())
             throw SerializationException("expected serialized class data missing")
         return when (descriptor.kind) {
-            StructureKind.CLASS -> BossDecoder(values.next() as Map<String, Any?>, descriptor)
+            StructureKind.CLASS, PolymorphicKind.SEALED -> BossDecoder(values.next() as Map<String, Any?>, descriptor)
             StructureKind.LIST -> BossListDecoder(values.next() as List<Any?>)
             else -> throw SerializationException("unsupported kind: ${descriptor.kind}")
         }
