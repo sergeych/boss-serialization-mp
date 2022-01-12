@@ -11,8 +11,10 @@ import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.internal.NamedValueDecoder
 import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 import net.sergeych.boss_serialization_mp.BossStruct
 import net.sergeych.bossk.Bossk
+import net.sergeych.bossk.TypeException
 import net.sergeych.mptools.openChannel
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -128,15 +130,29 @@ class BossDecoder(
         /**
          * Decode (deserialize) from a reader. The return type could be specified as nullable.
          */
-        suspend inline fun <reified T> decodeFrom(br: Bossk.Reader): T =
-            decodeFrom(typeOf<T>(), br)
+        suspend inline fun <reified T: Any?> decodeFrom(br: Bossk.Reader): T {
+            return decodeFrom(typeOf<T>(), br)
+        }
 
-        suspend fun <T: Any> decodeFrom(cls: KType,br: Bossk.Reader): T {
-            if( cls == typeOf<Map<*,*>>() )
-                return br.read() as T
-            val d = EmptySerializersModule.serializer(cls)
-            val decoder = BossDecoder(br.read(), d.descriptor)
-            return d.deserialize(decoder) as T
+        suspend fun <T: Any?> decodeFrom(cls: KType,br: Bossk.Reader): T {
+            return when(cls) {
+                typeOf<Map<*, *>>() -> br.read() as T
+                else -> {
+                    val d = EmptySerializersModule.serializer(cls)
+                    val raw = br.read<Any?>()
+                    when(raw) {
+                        is List<*> -> {
+                            val decoder = BossListDecoder(raw)
+                            decoder.decodeSerializableValue(d) as T
+                        }
+                        null -> null as T
+                        else -> {
+                            val decoder = BossDecoder(raw as Map<String, Any?>, d.descriptor)
+                            d.deserialize(decoder) as T
+                        }
+                    }
+                }
+            }
         }
 
         /**
@@ -167,7 +183,7 @@ class BossDecoder(
         /**
          * Decode (deserialize) from a byte array. The return type could be specified as nullable.
          */
-        inline suspend fun <reified T> decodeFrom(binaryData: ByteArray): T {
+        inline suspend fun <reified T: Any?> decodeFrom(binaryData: ByteArray): T {
             return decodeFrom(Bossk.Reader(binaryData.openChannel()))
         }
     }
@@ -179,7 +195,7 @@ internal class BossListDecoder(
     source: List<Any?>,
 ) : AbstractDecoder() {
 
-    override val serializersModule = EmptySerializersModule
+    override val serializersModule: SerializersModule = EmptySerializersModule
 
     private val values = source.iterator()
     private val size = source.size

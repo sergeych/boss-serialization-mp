@@ -40,7 +40,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
     }
 
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
-        for( c in SpecificConverter.converters() ) if( c.descriptor == serializer.descriptor ) {
+        for (c in SpecificConverter.converters()) if (c.descriptor == serializer.descriptor) {
             currentObject[currentTag] = c.serialize(value as Any)
             popTag()
             return
@@ -79,8 +79,10 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         /**
          * Encode some `@Serializable` value to a packed binary boss data
          */
-        inline suspend fun <reified T> encode(value: T): ByteArray {
-            return Bossk.ByteArrayWriter().also { it.encode(value) }.toByteArray()
+        inline suspend fun <reified T: Any> encode(value: T?): ByteArray {
+            return Bossk.ByteArrayWriter().also { w ->
+                value?.let { w.encode(it) } ?: w.write(null)
+            }.toByteArray()
         }
 
         /**
@@ -113,16 +115,25 @@ inline suspend fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
         write(value)
     else {
         val serializer: KSerializer<T> = EmptySerializersModule.serializer<T>()
-        val bs = BossStruct()
-        BossEncoder(bs).encodeSerializableValue(serializer, value)
-        write(bs.toMap())
+        when (value) {
+            is List<*> -> {
+                val list = mutableListOf<Any?>()
+                BossListEncoder(list).encodeSerializableValue(serializer,value)
+                write(list)
+            }
+            else -> {
+                val bs = BossStruct()
+                BossEncoder(bs).encodeSerializableValue(serializer, value)
+                write(bs.toMap())
+            }
+        }
     }
     return this
 }
 
 
 @OptIn(ExperimentalSerializationApi::class)
-internal class BossListEncoder(private val collection: MutableList<Any?>) : AbstractEncoder() {
+class BossListEncoder(private val collection: MutableList<Any?>) : AbstractEncoder() {
 
     override val serializersModule = EmptySerializersModule
 

@@ -16,6 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 @Serializable
 sealed class TBase
@@ -64,6 +65,29 @@ internal class BossListDecoderTest {
             println(y.list[1])
             assertEquals(42, (y.list[0] as TA).a)
             assertEquals("Hello", (y.list[1] as TB).b)
+        }
+    }
+
+    @Test
+    fun serializeRootList() {
+        return runTest {
+            val x = listOf(TA(42), TB("Hello"))
+            val b = BossEncoder.encode(x)
+            println(b.toDump())
+            val y = b.decodeBoss<List<TBase>>()
+            println(y[0])
+            println(y[1])
+            assertEquals(42, (y[0] as TA).a)
+            assertEquals("Hello", (y[1] as TB).b)
+        }
+    }
+
+    @Test fun serializeRootNull() {
+        return runTest {
+            val x = BossEncoder.encode(null)
+            println(x.toDump())
+            val y = x.decodeBoss<TBase?>()
+            assertNull(y)
         }
     }
 }

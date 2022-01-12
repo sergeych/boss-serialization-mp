@@ -203,7 +203,7 @@ object Bossk {
          *
          * @return this Writer instance
          */
-        suspend fun write(vararg objects: Any): Writer {
+        suspend fun write(vararg objects: Any?): Writer {
             for (x in objects) put(x)
             return this
         }

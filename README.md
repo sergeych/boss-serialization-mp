@@ -16,7 +16,11 @@ Due to multiplatform nature it has several differences from java version:
 
 ## Recent updates
 
-- 0.0.2-SNAPSHOT: added selaed class polymorphism support
+### 0.0.2-SNAPSHOT: 
+
+* added sealed class polymorphism support
+* Added initial support for root list objects
+* Added limited support for null root object, e.g. bytaArray.decode<NyClass?>() os now allowed, also BossEncoder.encode(null) will properly work in this case
 
 ## Crossplatorm notes
 
@@ -87,8 +91,6 @@ val r = Boss.Reader(inputStream)
 val decoded: MyDataClass = r.deserialize()
 ~~~
 
-__Important note__. The root object of the data to decode _must be a boss map_. E.g. you can't deserialize primitive types and lists as root objects. These compound types could be contained in fields only, the root object should still be a map. In other ford, you decode root objects only to classes.
-
 If you need to decode boss to a map rather than a class instance, use `BossStruct` for field types and `binaryData.decodeBossStruct`.
 
 ### Allowed field types
@@ -107,9 +109,9 @@ If you need to decode boss to a map rather than a class instance, use `BossStruc
 
 The `lotlinx.serialization` library is compile-time, no reflection, so it can't really distinguish types in polymorphic arrays if the base type for the component is Any. So, use traditional Boss class interface to cope with such. Still, if the type of the array is not Any, you can include it providing you registered de/serializer for your base class that implements such polymorphism, it is an allowed and almost well described technique, see main library docs.
 
-### Root object should be a class instance, not a collection 
+### Root object should be a class instance, BossStruct (Map<String,Any?) or a list 
 
-...and not a simple type. You can not serialize or deserialize a list, or a simple type, or whatever else as a root object. You _can serialize it as a field of a root object. The object you serialize should always be a class instance, and the object you deserialize to should be an instance of a class, not a list or a map. The fields could be lists, maps or whatever else, but the root object should be a class instance. It means that in the encoded boss object the root object must be a map.
+You can not serialize a simple type, or whatever else *as a root object*. You *can serialize it as a as field of a valid root object*, e.g. class instance, list or a map. The object you serialize should always be a class instance, and the object you deserialize to should be an instance of a class, not a list or a map. The fields could be lists, maps or whatever else, but the root object should be a class instance. It means that in the encoded boss object the root object must be a map.
 
 Please add an issue if you really need to use anything at root level.
 
