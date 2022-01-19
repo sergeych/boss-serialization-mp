@@ -1,7 +1,9 @@
 package net.sergeych.platform
 
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
 
-actual fun runTest(block: suspend () -> Unit) { GlobalScope.promise { block() } }
+@OptIn(DelicateCoroutinesApi::class)
+actual fun runTest(block: suspend () -> Unit): dynamic = GlobalScope.promise { block() }
 

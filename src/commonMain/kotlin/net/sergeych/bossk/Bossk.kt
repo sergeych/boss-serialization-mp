@@ -258,6 +258,12 @@ object Bossk {
 
         private suspend fun put(data: Any?) {
             val obj = converter?.toBoss(data) ?: data
+            suspend fun writeArray(x: ByteArray) {
+                if (!tryWriteReference(x)) {
+                    writeHeader(TYPE_BIN, x.size.toLong())
+                    out.sendAll(x)
+                }
+            }
             when (obj) {
                 is BigInteger -> {
                     if (obj.signum() >= 0) writeHeader(TYPE_INT, obj)
@@ -286,12 +292,7 @@ object Bossk {
                 }
                 is String -> writeString(obj.toString())
                 is CharSequence -> writeString(obj.toString())
-                is ByteArray -> {
-                    if (!tryWriteReference(obj)) {
-                        writeHeader(TYPE_BIN, obj.size.toLong())
-                        out.sendAll(obj)
-                    }
-                }
+                is ByteArray -> writeArray(obj)
                 is Array<*> -> writeArray(obj)
                 is Boolean -> writeHeader(TYPE_EXTRA, (if (obj) XT_TTRUE else XT_FALSE).toLong())
                 is Instant -> {
@@ -301,7 +302,10 @@ object Bossk {
                 is Map<*, *> -> writeMap(obj)
                 is Collection<*> -> writeArray(obj)
                 null -> writeHeader(TYPE_CREF, 0)
-                else -> throw TypeException("unknown type: ${obj::class.simpleName}")
+                else -> {
+                    // it could be an strange type of array
+                    convertArray(obj)?.let { writeArray(it) } ?: throw TypeException("unknown object type: $obj")
+                }
             }
         }
 
@@ -561,3 +565,15 @@ object Bossk {
         }
     }
 }
+
+/**
+ * Dofferent platform may have specific ailas types for ByteArray. If the `source` *is* the sort of NyteArray (any
+ * binary data we want to be treated by Boss as binary), convert them to the ByteArray.
+ *
+ * _important note_ on kotlin.js platform the result could be non-null and functionally analogous to ByteArray, bur
+ * `(result is ByteArray) == false`. This is a platform featurebug and can't be converted without copying binary data
+ * on the fly we try to avoid.
+ *
+ * @return converted binary data if the source is binary, null otherwise.
+ */
+expect fun convertArray(source: Any?): ByteArray?

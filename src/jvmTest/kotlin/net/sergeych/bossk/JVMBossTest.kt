@@ -1,22 +1,15 @@
 package net.sergeych.bossk
 
-import com.ionspin.kotlin.bignum.integer.BigInteger
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
-import kotlinx.datetime.toJavaInstant
-import net.sergeych.bossk.Bossk
 import net.sergeych.mptools.decodeHex
-import net.sergeych.mptools.flip
 import net.sergeych.mptools.toHex
 import net.sergeych.platform.runTest
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 internal class JVMBossTest {
 
@@ -71,5 +64,24 @@ internal class JVMBossTest {
             assertContentEquals(ba, (x[1] as ByteArray))
         }
     }
+
+    @Test
+    fun testConstants() {
+        return runTest {
+            assertEquals(0, Bossk.unpack<Any>(fromHex("00")) as Int)
+            assertEquals("00", Bossk.pack(0).toHex())
+            assertEquals(true, Bossk.unpack(fromHex("61")))
+            assertEquals("61", Bossk.pack(true).toHex())
+            assertEquals(false, Bossk.unpack(fromHex("69")))
+            assertEquals("69", Bossk.pack(false).toHex())
+            assertEquals(1.0, Bossk.unpack(fromHex("11")), 1e-6)
+            assertEquals("11", Bossk.pack(1.0).toHex())
+            assertEquals(-1.0, Bossk.unpack(fromHex("21")), 1e-6)
+            assertEquals("21", Bossk.pack(-1.0).toHex())
+            assertEquals(0.0, Bossk.unpack<Any>(fromHex("09")) as Double, 1e-6)
+            assertEquals("09", Bossk.pack(0.0).toHex())
+        }
+    }
+
 
 }

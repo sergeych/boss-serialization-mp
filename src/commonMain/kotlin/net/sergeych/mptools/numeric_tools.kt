@@ -5,6 +5,7 @@ import net.sergeych.bossk.FormatException
 import net.sergeych.bossk.TypeException
 import kotlin.math.min
 
+@Suppress("unused")
 fun BigInteger(text: String): BigInteger = BigInteger.parseString(text)
 
 /**
@@ -46,10 +47,12 @@ fun Long.toHex(length: Int = 0): String {
     return result
 }
 
-fun Int.toHex(length: Int = 0) = toLong().toHex(length)
+fun Int.toHex(length: Int = 0) = (toLong() and 0xFFFFffff).toHex(length)
+@Suppress("unused")
 fun UInt.toHex(length: Int = 0) = toLong().toHex(length)
-fun Byte.toHex(length: Int = 0) = toLong().toHex(length)
+fun Byte.toHex(length: Int = 0) = (toLong() and 0xFF).toHex(length)
 fun UByte.toHex(length: Int = 0) = toLong().toHex(length)
+@Suppress("unused")
 fun ULong.toHex(length: Int = 0) = toLong().toHex(length)
 
 fun ByteArray.toHex(separator: String = " "): String = joinToString(separator) { it.toUByte().toHex(2) }
