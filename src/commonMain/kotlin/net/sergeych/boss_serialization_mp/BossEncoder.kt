@@ -79,7 +79,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         /**
          * Encode some `@Serializable` value to a packed binary boss data
          */
-        inline suspend fun <reified T: Any> encode(value: T?): ByteArray {
+        inline fun <reified T: Any> encode(value: T?): ByteArray {
             return Bossk.ByteArrayWriter().also { w ->
                 value?.let { w.encode(it) } ?: w.write(null)
             }.toByteArray()
@@ -110,7 +110,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
  * Encode and write object to a `Boss.Writer`
  */
 @OptIn(ExperimentalSerializationApi::class)
-inline suspend fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
+inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
     if (value is BossStruct)
         write(value)
     else {

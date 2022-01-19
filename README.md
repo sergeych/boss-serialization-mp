@@ -16,6 +16,14 @@ Due to multiplatform nature it has several differences from java version:
 
 ## Recent updates
 
+### 0.1.1-SNAPSHOT
+
+This version is slighly different as in most cases it does not require suspend fun to call boss operations. Also, some refactoring make [Bossk] codec more clear that caused one deprecation.
+
+* Fixed MP issue with ByteArray / Uint8Array ambiguity when encoding
+* Added very useful non-async variants of encoder/decoder, allowing sync operations also on JS
+* ByteArray encoding/decoding and de/serializing has been migrated to use sync versions (optimization)
+
 ### 0.0.2-SNAPSHOT: 
 
 * added sealed class polymorphism support

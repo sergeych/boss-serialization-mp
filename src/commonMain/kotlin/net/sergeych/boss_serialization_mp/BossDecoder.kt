@@ -12,10 +12,9 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.internal.NamedValueDecoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
+import net.sergeych.boss_serialization.BossDecoder.Companion.decodeFrom
 import net.sergeych.boss_serialization_mp.BossStruct
 import net.sergeych.bossk.Bossk
-import net.sergeych.bossk.TypeException
-import net.sergeych.mptools.openChannel
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -134,7 +133,32 @@ class BossDecoder(
             return decodeFrom(typeOf<T>(), br)
         }
 
+        inline fun <reified T: Any?> decodeFrom(br: Bossk.SyncReader): T {
+            return decodeFrom(typeOf<T>(), br)
+        }
+
         suspend fun <T: Any?> decodeFrom(cls: KType,br: Bossk.Reader): T {
+            return when(cls) {
+                typeOf<Map<*, *>>() -> br.read() as T
+                else -> {
+                    val d = EmptySerializersModule.serializer(cls)
+                    val raw = br.read<Any?>()
+                    when(raw) {
+                        is List<*> -> {
+                            val decoder = BossListDecoder(raw)
+                            decoder.decodeSerializableValue(d) as T
+                        }
+                        null -> null as T
+                        else -> {
+                            val decoder = BossDecoder(raw as Map<String, Any?>, d.descriptor)
+                            d.deserialize(decoder) as T
+                        }
+                    }
+                }
+            }
+        }
+
+        fun <T: Any?> decodeFrom(cls: KType,br: Bossk.SyncReader): T {
             return when(cls) {
                 typeOf<Map<*, *>>() -> br.read() as T
                 else -> {
@@ -183,8 +207,8 @@ class BossDecoder(
         /**
          * Decode (deserialize) from a byte array. The return type could be specified as nullable.
          */
-        inline suspend fun <reified T: Any?> decodeFrom(binaryData: ByteArray): T {
-            return decodeFrom(Bossk.Reader(binaryData.openChannel()))
+        inline fun <reified T: Any?> decodeFrom(binaryData: ByteArray): T {
+            return decodeFrom(Bossk.ByteArrayReader(binaryData))
         }
     }
 }

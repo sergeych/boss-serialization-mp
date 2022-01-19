@@ -6,7 +6,7 @@ plugins {
 
 
 group = "net.sergeych"
-version = "0.0.2-SNAPSHOT"
+version = "0.1.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -16,7 +16,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions.jvmTarget = "11"
         }
         withJava()
         testRuns["test"].executionTask.configure {
@@ -25,9 +25,6 @@ kotlin {
     }
     js(BOTH) {
         browser {
-//            commonWebpackConfig {
-//                cssSupport.enabled = true
-//            }
         }
 //        useCommonJs()
     }

@@ -6,6 +6,8 @@ import com.ionspin.kotlin.bignum.integer.BigInteger
 import com.ionspin.kotlin.bignum.integer.Sign
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import net.sergeych.boss_serialization_mp.BossStruct
 import net.sergeych.mptools.*
@@ -16,6 +18,8 @@ class AssertionFailedException(text: String) : Exception(text)
 internal fun assert(condition: Boolean, text: String) {
     if (!condition) throw AssertionFailedException(text)
 }
+
+typealias ByteSender = (Byte) -> Unit
 
 /**
  * Multiplatform Boss codec for Kotlin based on channels, coroutine friendly and could also be used to process
@@ -90,17 +94,17 @@ object Bossk {
     // TFUNCTION = 10; // callable function
     // TGLOBREF = 11; // global reference
 
-    suspend fun packWith(converter: Converter?, obj: Any?): ByteArray {
+    fun packWith(converter: Converter?, obj: Any?): ByteArray {
         return try {
-            ByteArrayWriter(converter = converter).also { it.writeObject(obj) }.toByteArray()
+            ByteArrayWriter(converter = converter).also { it.write(obj) }.toByteArray()
         } catch (ex: Exception) {
             throw TypeException("Boss can't dump this object", ex)
         }
     }
 
-    // dupe of the oackWith to avoid bug in JS IR compiler KT-50505
-    suspend fun pack(obj: Any?): ByteArray = try {
-        ByteArrayWriter().also { it.writeObject(obj) }.toByteArray()
+    // dupe of the packWith to avoid bug in JS IR compiler KT-50505
+    fun pack(obj: Any?): ByteArray = try {
+        ByteArrayWriter().also { it.write(obj) }.toByteArray()
     } catch (ex: Exception) {
         throw TypeException("Boss can't dump this object", ex)
     }
@@ -166,9 +170,9 @@ object Bossk {
      * @author sergeych
      */
     @Suppress("unused")
-    open class Writer(
-        private val out: SendChannel<Byte>,
-        private val converter: Converter? = null
+    class WriteEngine(
+        private val converter: Converter? = null,
+        private val out: ByteSender
     ) {
         private var cache = HashMap<Any?, Int>()
         private var treeMode = true
@@ -188,55 +192,59 @@ object Bossk {
          * untested.
          */
         @Suppress("unused")
-        suspend fun setStreamMode() {
+        fun setStreamMode() {
             cache.clear()
             cache.put(null, 0)
             treeMode = false
             writeHeader(TYPE_EXTRA, XT_STREAM_MODE.toLong())
         }
 
-        /**
-         * Serialize one or more objects. Objects will be serialized one by one, so corresponding number of read()'s is
-         * necessary to retrieve them all.
-         *
-         * @param objects any number of Objects known to BOSS
-         *
-         * @return this Writer instance
-         */
-        suspend fun write(vararg objects: Any?): Writer {
-            for (x in objects) put(x)
-            return this
+//        /**
+//         * Serialize one or more objects. Objects will be serialized one by one, so corresponding number of read()'s is
+//         * necessary to retrieve them all.
+//         *
+//         * @param objects any number of Objects known to BOSS
+//         *
+//         * @return this Writer instance
+//         */
+//        fun write(vararg objects: Any?): Writer {
+//            for (x in objects) put(x)
+//            return this
+//        }
+
+//        /**
+//         * Serialize single object known to boss (e.g. integers, strings, byte[] arrays or Bytes class instances, Date
+//         * instances, arrays, [ArrayList], [HashMap]
+//         *
+//         * @param obj the root object to encode
+//         *
+//         * @return this instance to allow chaining calls
+//         */
+//        fun writeObject(obj: Any?): Writer {
+////            if (biSerializer != null && !(obj is Number || obj is String || obj is java.time.ZonedDateTime
+////                        || obj is Boolean)
+////            ) put(biSerializer.serialize<Any>(obj)) else put(obj)
+//            put(obj)
+//            return this
+//        }
+
+        private fun send(value: Int) {
+            out((value and 0xFF).toByte())
         }
 
-        /**
-         * Serialize single object known to boss (e.g. integers, strings, byte[] arrays or Bytes class instances, Date
-         * instances, arrays, [ArrayList], [HashMap]
-         *
-         * @param obj the root object to encode
-         *
-         * @return this instance to allow chaining calls
-         */
-        suspend fun writeObject(obj: Any?): Writer {
-//            if (biSerializer != null && !(obj is Number || obj is String || obj is java.time.ZonedDateTime
-//                        || obj is Boolean)
-//            ) put(biSerializer.serialize<Any>(obj)) else put(obj)
-            put(obj)
-            return this
-        }
-
-        private suspend fun send(value: Int) {
-            out.send((value and 0xFF).toByte())
-        }
-
-        private suspend fun writeHeader(code: Int, value: BigInteger) {
+        private fun writeHeader(code: Int, value: BigInteger) {
             send(code or 0xF8)
             val bb = value.toByteArray()
             bb.flipSelf()
             writeEncoded(bb.size.toLong())
-            out.sendAll(bb)
+            sendAll(bb)
         }
 
-        private suspend fun writeHeader(code: Int, _value: Long) {
+        private fun sendAll(data: ByteArray) {
+            for (x in data) out(x)
+        }
+
+        private fun writeHeader(code: Int, _value: Long) {
             var value = _value
             assert(code >= 0 && code <= 7, "code is out of range 0..7: $code")
             assert(value >= 0, "value can't be negative: $value")
@@ -256,12 +264,12 @@ object Bossk {
         }
 
 
-        private suspend fun put(data: Any?) {
+        fun put(data: Any?) {
             val obj = converter?.toBoss(data) ?: data
-            suspend fun writeArray(x: ByteArray) {
+            fun writeArray(x: ByteArray) {
                 if (!tryWriteReference(x)) {
                     writeHeader(TYPE_BIN, x.size.toLong())
-                    out.sendAll(x)
+                    sendAll(x)
                 }
             }
             when (obj) {
@@ -286,7 +294,7 @@ object Bossk {
                         1.0 -> writeHeader(TYPE_EXTRA, XT_DONE.toLong())
                         else -> {
                             writeHeader(TYPE_EXTRA, XT_DOUBLE.toLong())
-                            out.sendAll(longToBytes(d.toBits()).flip())
+                            sendAll(longToBytes(d.toBits()).flip())
                         }
                     }
                 }
@@ -309,15 +317,15 @@ object Bossk {
             }
         }
 
-        private suspend fun writeString(s: String) {
+        private fun writeString(s: String) {
             if (!tryWriteReference(s)) {
                 val bb = s.encodeToByteArray()
                 writeHeader(TYPE_TEXT, bb.size.toLong())
-                out.sendAll(bb)
+                sendAll(bb)
             }
         }
 
-        private suspend fun writeMap(obj: Any) {
+        private fun writeMap(obj: Any) {
             if (!tryWriteReference(obj)) {
                 val map = obj as Map<*, *>
                 writeHeader(TYPE_DICT, map.size.toLong())
@@ -328,21 +336,21 @@ object Bossk {
             }
         }
 
-        private suspend fun writeArray(array: Array<*>) {
+        private fun writeArray(array: Array<*>) {
             if (!tryWriteReference(array)) {
                 writeHeader(TYPE_LIST, array.size.toLong())
                 for (x in array) put(x)
             }
         }
 
-        private suspend fun writeArray(collection: Collection<*>) {
+        private fun writeArray(collection: Collection<*>) {
             if (!tryWriteReference(collection)) {
                 writeHeader(TYPE_LIST, collection.size.toLong())
                 for (x in collection) put(x)
             }
         }
 
-        private suspend fun tryWriteReference(obj: Any): Boolean = cache.get(obj)?.let { index ->
+        private fun tryWriteReference(obj: Any): Boolean = cache.get(obj)?.let { index ->
             writeHeader(TYPE_CREF, index.toLong())
             return true
         } ?: run {
@@ -351,17 +359,13 @@ object Bossk {
             false
         }
 
-        private suspend fun writeEncoded(_value: Long) {
+        private fun writeEncoded(_value: Long) {
             var value = _value
             while (value > 0x7f) {
                 send(value.toInt() and 0x7f)
                 value = value shr 7
             }
             send(value.toInt() or 0x80)
-        }
-
-        fun close() {
-            out.close()
         }
 
         companion object {
@@ -377,146 +381,82 @@ object Bossk {
         }
     }
 
-    class ByteArrayWriter(
-        private val channel: ByteArrayOutputChannel = ByteArrayOutputChannel(),
-        converter: Converter? = null
-    ) : Writer(channel, converter) {
-        suspend fun toByteArray(): ByteArray = channel.toByteArray()
-    }
+    abstract class Writer {
+        abstract protected val engine: WriteEngine
 
-    @Suppress("unused")
-    class Reader(
-        private val channel: ReceiveChannel<Byte>,
-        private val converter: Converter? = null
-    ) {
-        protected var treeMode = true
-        protected var showTrace = false
-        private var cache = mutableListOf<Any>()
+        /**
+         * Stream mode turns off caching so could be used with arbitrary length streams
+         * without cache memory leaking
+         */
+        @Suppress("unused")
+        fun setStreamMode() {
+            engine.setStreamMode()
+        }
 
-//        suspend fun traceObject() {
-//            println(readHeader())
-//        }
 
-        private suspend fun readHeader(): Header {
-            val b = readByte()
-            val code = b and 7
-            val value = b ushr 3
-            return when {
-                value >= 31 -> {
-                    val length = readEncodedLong().toInt()
-                    Header(code, readBig(length))
-                }
-                value > 22 ->
-                    // up to 8 bytes, e.g. long
-                    Header(code, readLong(value - 22))
-                else -> Header(code, value.toLong())
-            }
+        /**
+         * Write one or more objects that BOSS directly supports, see [WriteEngine]
+         */
+        fun write(vararg objects: Any?) {
+            for (x in objects) engine.put(x)
         }
 
         /**
-         * Read byte or throw EOFException
-         *
-         * @return 0..255 byte value
+         * Serialize a single object
          */
-        private suspend fun readByte(): Int = channel.receive().toUByte().toInt()
+        @Deprecated("useless copy of write()", ReplaceWith("write(x)"))
+        fun writeObject(x: Any?) {
+            write(x)
+        }
+    }
 
-        private suspend fun readEncodedLong(): Long {
-            var value: Long = 0
-            var shift = 0
-            while (true) {
-                val n = readByte()
-                value = value or (n.toLong() and 0x7F shl shift)
-                if (n and 0x80 != 0) return value
-                shift += 7
+    class ByteArrayWriter(
+        converter: Converter? = null
+    ) : Writer() {
+
+        val data = mutableListOf<Byte>()
+
+        override val engine = WriteEngine(converter) { data.add(it) }
+
+        fun toByteArray(): ByteArray = data.toByteArray()
+    }
+
+    /**
+     * The very strange channel-based coroutine writer. Instad of the constructor, it uses suspended
+     * factory:
+     * ~~~
+     * suspend fun some(ch: SendChannel<Byte>) {
+     *  val w = ChannelWriter(ch)
+     *  w.write("hello")
+     * ~~~
+     * the engine will send data to a provided channel using the caller's context. The resulting writer
+     * however could be used _without coroutine context_ as it will use stored one.
+     *
+     * Int the rest it is a regular bossk writer.
+     */
+    @Suppress("unused")
+    class ChannelWriter private constructor(override val engine: WriteEngine) : Writer() {
+        companion object {
+            suspend operator fun invoke(channel: SendChannel<Byte>, converter: Converter? = null) {
+                return coroutineScope {
+                    val e = WriteEngine(converter) {
+                        launch { channel.send(it) }
+                    }
+                    ChannelWriter(e)
+                }
             }
         }
+    }
 
-        private suspend fun readBig(length: Int): BigInteger {
-            val bytes = channel.reciveBytes(length)
-            bytes.flipSelf()
-            return BigInteger.fromByteArray(bytes, Sign.POSITIVE)
-        }
-
-        private suspend fun readLong(length: Int): Long {
-            var l = length
-            return if (l <= 8) {
-                var res: Long = 0
-                var n = 0
-                while (l-- > 0) {
-                    res = res or (readByte().toLong() shl n)
-                    n += 8
-                }
-                res
-            } else throw FormatException("readlLong needs up to 8 bytes as length")
-        }
-
-        fun setTrace(on: Boolean) {
-            showTrace = on
-        }
-
+    open class ReaderBase(protected val converter: Converter? = null) {
+        protected var treeMode = true
+        protected var showTrace = false
+        protected var cache = mutableListOf<Any>()
         protected fun trace(s: String?) {
             if (showTrace) println(s)
         }
 
-        /**
-         * Read next object from the stream
-         *
-         * @param <T> expected object type
-         *
-         * @return next object casted to (T)
-        </T> */
-        suspend fun <T> read(): T = get()
-
-        private suspend fun <T> get(): T {
-            val h = readHeader()
-            val result = when (h.code) {
-                TYPE_INT -> //                    trace("Int: " + h.smallestNumber(false));
-                    h.smallestNumber(false) as T
-                TYPE_NINT -> return h.smallestNumber(true) as T
-                TYPE_BIN, TYPE_TEXT -> {
-                    val bb = if (h.value > 0) channel.reciveBytes(h.value.toInt()) else byteArrayOf()
-                    if (h.code == TYPE_TEXT) {
-                        val s = bb.decodeToString()
-                        cacheObject(s)
-                        s as T
-                    } else {
-                        cacheObject(bb)
-                        bb as T
-                    }
-                }
-                TYPE_LIST -> {
-                    val data = ArrayList<Any?>((if (h.value < 0x10000) h.value else 0x10000).toInt())
-                    cacheObject(data)
-                    for (i in 0 until h.value)
-                        data.add(get())
-                    data as T
-                }
-                TYPE_DICT -> readObject<T>(h)
-                TYPE_CREF -> {
-                    val i: Int = h.value.toInt()
-                    (if (i == 0) null else cache[i - 1]) as T
-                }
-                TYPE_EXTRA -> parseExtra(h.value.toInt()) as T
-                else -> throw FormatException("Bad BOSS header")
-            }
-            return converter?.let { it.fromBoss(result) as T } ?: result
-        }
-
-        private suspend fun <T> readObject(h: Header): T {
-            val dict = HashMap<Any, Any?>()
-            cacheObject(dict)
-            for (i in 0 until h.value) dict.put(get(), get())
-            //            if( hash.containsKey("__type") || hash.containsKey("__t"))
-//                return (T) deserializer.deserialize(hash);
-//            trace("Dict: " + hash);
-            return dict as T
-        }
-
-        suspend fun readInt() = (get() as Number).toInt()
-        suspend fun readLong() = (get() as Number).toLong()
-        suspend fun readDouble() = (get() as Number).toDouble()
-
-        private fun cacheObject(obj: Any) {
+        protected fun cacheObject(obj: Any) {
             if (treeMode) cache.add(obj) else {
 
                 // right now this is disabled (maxStringSize is 0)
@@ -538,7 +478,26 @@ object Bossk {
             }
         }
 
-        private suspend fun parseExtra(code: Int): Any {
+
+        fun setStreamMode() {
+            if (cache.size > 0) cache.clear()
+            treeMode = false
+        }
+
+        fun setTrace(on: Boolean) {
+            showTrace = on
+        }
+
+
+    }
+
+    @Suppress("unused")
+    class Reader(
+        private val input: ReceiveChannel<Byte>,
+         converter: Converter? = null
+    ) : ReaderBase(converter) {
+
+        protected suspend fun parseExtra(code: Int): Any {
             return when (code) {
                 XT_DZERO -> 0.0
                 XT_DONE -> 1.0
@@ -549,19 +508,285 @@ object Bossk {
                 XT_STREAM_MODE -> {
                     setStreamMode()
                     // and ignore second parameter:
-                    get<Any>()
+                    read<Any>()
                 }
                 XT_DOUBLE -> {
-                    val data = channel.reciveBytes(8)
+                    val data = readBytes(8)
                     Double.fromBits(bytesToLong(data))
                 }
                 else -> throw FormatException("Unknown extra code: ${code}")
             }
         }
 
-        private fun setStreamMode() {
-            if (cache.size > 0) cache.clear()
-            treeMode = false
+        private suspend fun readHeader(): Header {
+            val b = readByte()
+            val code = b and 7
+            val value = b ushr 3
+            return when {
+                value >= 31 -> {
+                    val length = readEncodedLong().toInt()
+                    Header(code, readBig(length))
+                }
+                value > 22 ->
+                    // up to 8 bytes, e.g. long
+                    Header(code, readLong(value - 22))
+                else -> Header(code, value.toLong())
+            }
+        }
+
+        /**
+         * Read byte or throw [NoDataException]
+         *
+         * @return 0..255 byte value
+         */
+        private suspend fun readBytes(length: Int=1): ByteArray = input.reciveBytes(length)
+
+        private suspend fun readByte() = readBytes(1)[0].toUByte().toInt()
+
+        private suspend fun readEncodedLong(): Long {
+            var value: Long = 0
+            var shift = 0
+            while (true) {
+                val n = readByte()
+                value = value or (n.toLong() and 0x7F shl shift)
+                if (n and 0x80 != 0) return value
+                shift += 7
+            }
+        }
+
+        private suspend fun readBig(length: Int): BigInteger {
+            val bytes = readBytes(length)
+            bytes.flipSelf()
+            return BigInteger.fromByteArray(bytes, Sign.POSITIVE)
+        }
+
+        private suspend fun readLong(length: Int): Long {
+            var l = length
+            return if (l <= 8) {
+                var res: Long = 0
+                var n = 0
+                while (l-- > 0) {
+                    res = res or (readByte().toLong() shl n)
+                    n += 8
+                }
+                res
+            } else throw FormatException("readlLong needs up to 8 bytes as length")
+        }
+
+        /**
+         * Read next object from the stream
+         *
+         * @param <T> expected object type
+         *
+         * @return next object casted to (T)
+        </T> */
+        suspend fun <T> read(): T {
+            val h = readHeader()
+            val result = when (h.code) {
+                TYPE_INT -> //                    trace("Int: " + h.smallestNumber(false));
+                    h.smallestNumber(false) as T
+                TYPE_NINT -> return h.smallestNumber(true) as T
+                TYPE_BIN, TYPE_TEXT -> {
+                    val bb = if (h.value > 0) readBytes(h.value.toInt()) else byteArrayOf()
+                    if (h.code == TYPE_TEXT) {
+                        val s = bb.decodeToString()
+                        cacheObject(s)
+                        s as T
+                    } else {
+                        cacheObject(bb)
+                        bb as T
+                    }
+                }
+                TYPE_LIST -> {
+                    val data = ArrayList<Any?>((if (h.value < 0x10000) h.value else 0x10000).toInt())
+                    cacheObject(data)
+                    for (i in 0 until h.value)
+                        data.add(read())
+                    data as T
+                }
+                TYPE_DICT -> readObject(h)
+                TYPE_CREF -> {
+                    val i: Int = h.value.toInt()
+                    (if (i == 0) null else cache[i - 1]) as T
+                }
+                TYPE_EXTRA -> parseExtra(h.value.toInt()) as T
+                else -> throw FormatException("Bad BOSS header")
+            }
+            return converter?.let { it.fromBoss(result) as T } ?: result
+        }
+
+        private suspend fun <T> readObject(h: Header): T {
+            val dict = HashMap<Any, Any?>()
+            cacheObject(dict)
+            for (i in 0 until h.value) dict.put(read(), read())
+            return dict as T
+        }
+
+        suspend fun readInt() = (read() as Number).toInt()
+        suspend fun readLong() = (read() as Number).toLong()
+        suspend fun readDouble() = (read() as Number).toDouble()
+    }
+
+    /**
+     * In the platforms like kotlin.js there is no way to use asun reader in blocking mode
+     * that is often useful, and kotlin is stupid enpght not to let us parametrize suspend modifier
+     * (C++ is still sthe superior). So we got to copypaste and modify reader code to be able to unoack
+     * boss without coroutines.
+     * @param converter, see [Reader]
+     * @param input bytes source, should return ByteArray of exact requested size or throw some exception. The
+     *              boss encoding makes it impossible for the valid data to end prematurely, so checking for 
+     *              the EOF is usually not needed.
+     */
+    @Suppress("unused")
+    class SyncReader(
+        converter: Converter? = null,
+        private val input: (size: Int)->ByteArray,
+    ) : ReaderBase(converter) {
+
+        protected fun parseExtra(code: Int): Any {
+            return when (code) {
+                XT_DZERO -> 0.0
+                XT_DONE -> 1.0
+                XT_DMINUSONE -> -1.0
+                XT_TTRUE -> true
+                XT_FALSE -> false
+                XT_TIME -> Instant.fromEpochSeconds(readEncodedLong())
+                XT_STREAM_MODE -> {
+                    setStreamMode()
+                    // and ignore second parameter:
+                    read<Any>()
+                }
+                XT_DOUBLE -> {
+                    val data = readBytes(8)
+                    Double.fromBits(bytesToLong(data))
+                }
+                else -> throw FormatException("Unknown extra code: ${code}")
+            }
+        }
+
+        private fun readHeader(): Header {
+            val b = readByte()
+            val code = b and 7
+            val value = b ushr 3
+            return when {
+                value >= 31 -> {
+                    val length = readEncodedLong().toInt()
+                    Header(code, readBig(length))
+                }
+                value > 22 ->
+                    // up to 8 bytes, e.g. long
+                    Header(code, readLong(value - 22))
+                else -> Header(code, value.toLong())
+            }
+        }
+
+        /**
+         * Read byte or throw [NoDataException]
+         *
+         * @return 0..255 byte value
+         */
+        private fun readBytes(length: Int=1): ByteArray = input(length)
+
+        private fun readByte() = readBytes(1)[0].toUByte().toInt()
+
+        private fun readEncodedLong(): Long {
+            var value: Long = 0
+            var shift = 0
+            while (true) {
+                val n = readByte()
+                value = value or (n.toLong() and 0x7F shl shift)
+                if (n and 0x80 != 0) return value
+                shift += 7
+            }
+        }
+
+        private fun readBig(length: Int): BigInteger {
+            val bytes = readBytes(length)
+            bytes.flipSelf()
+            return BigInteger.fromByteArray(bytes, Sign.POSITIVE)
+        }
+
+        private fun readLong(length: Int): Long {
+            var l = length
+            return if (l <= 8) {
+                var res: Long = 0
+                var n = 0
+                while (l-- > 0) {
+                    res = res or (readByte().toLong() shl n)
+                    n += 8
+                }
+                res
+            } else throw FormatException("readlLong needs up to 8 bytes as length")
+        }
+
+        /**
+         * Read next object from the stream
+         *
+         * @param <T> expected object type
+         *
+         * @return next object casted to (T)
+        </T> */
+        fun <T> read(): T {
+            val h = readHeader()
+            val result = when (h.code) {
+                TYPE_INT -> //                    trace("Int: " + h.smallestNumber(false));
+                    h.smallestNumber(false) as T
+                TYPE_NINT -> return h.smallestNumber(true) as T
+                TYPE_BIN, TYPE_TEXT -> {
+                    val bb = if (h.value > 0) readBytes(h.value.toInt()) else byteArrayOf()
+                    if (h.code == TYPE_TEXT) {
+                        val s = bb.decodeToString()
+                        cacheObject(s)
+                        s as T
+                    } else {
+                        cacheObject(bb)
+                        bb as T
+                    }
+                }
+                TYPE_LIST -> {
+                    val data = ArrayList<Any?>((if (h.value < 0x10000) h.value else 0x10000).toInt())
+                    cacheObject(data)
+                    for (i in 0 until h.value)
+                        data.add(read())
+                    data as T
+                }
+                TYPE_DICT -> readObject(h)
+                TYPE_CREF -> {
+                    val i: Int = h.value.toInt()
+                    (if (i == 0) null else cache[i - 1]) as T
+                }
+                TYPE_EXTRA -> parseExtra(h.value.toInt()) as T
+                else -> throw FormatException("Bad BOSS header")
+            }
+            return converter?.let { it.fromBoss(result) as T } ?: result
+        }
+
+        private fun <T> readObject(h: Header): T {
+            val dict = HashMap<Any, Any?>()
+            cacheObject(dict)
+            for (i in 0 until h.value) dict.put(read(), read())
+            return dict as T
+        }
+
+        fun readInt() = (read() as Number).toInt()
+        fun readLong() = (read() as Number).toLong()
+        fun readDouble() = (read() as Number).toDouble()
+    }
+
+    /**
+     * End of data for byte array reader, useful when unknown number of objects are sequentially encoded
+     */
+    class NoDataException: Exception("end of data reached")
+
+    /**
+     * Construct a [SyncReader] instance that unpack data from a supplied array
+     */
+    fun ByteArrayReader(source: ByteArray,converter: Converter? = null): SyncReader {
+        var position = 0
+        return SyncReader(converter) { length ->
+            if( length <= 0 ) throw IllegalArgumentException("data read length should be > 0")
+            if( position + length > source.size ) throw NoDataException()
+            source.sliceArray( position until position+length).also { position += length }
         }
     }
 }
