@@ -35,7 +35,7 @@ fun bytesToLong(b: ByteArray): Long {
 
 private val hexDigits = "0123456789ABCDEF"
 
-fun Long.toHex(length: Int = 0): String {
+fun Long.encodeToHex(length: Int = 0): String {
     var result = ""
     var value = this
     if (value < 0) throw TypeException("cant convert to hex negative (ambiguous)")
@@ -47,16 +47,16 @@ fun Long.toHex(length: Int = 0): String {
     return result
 }
 
-fun Int.toHex(length: Int = 0) = (toLong() and 0xFFFFffff).toHex(length)
+fun Int.encodeToHex(length: Int = 0) = (toLong() and 0xFFFFffff).encodeToHex(length)
 @Suppress("unused")
-fun UInt.toHex(length: Int = 0) = toLong().toHex(length)
-fun Byte.toHex(length: Int = 0) = (toLong() and 0xFF).toHex(length)
-fun UByte.toHex(length: Int = 0) = toLong().toHex(length)
+fun UInt.encodeToHex(length: Int = 0) = toLong().encodeToHex(length)
+fun Byte.encodeToHex(length: Int = 0) = (toLong() and 0xFF).encodeToHex(length)
+fun UByte.encodeToHex(length: Int = 0) = toLong().encodeToHex(length)
 @Suppress("unused")
-fun ULong.toHex(length: Int = 0) = toLong().toHex(length)
+fun ULong.encodeToHex(length: Int = 0) = toLong().encodeToHex(length)
 
-fun ByteArray.toHex(separator: String = " "): String = joinToString(separator) { it.toUByte().toHex(2) }
-fun Collection<Byte>.toHex(separator: String = " "): String = joinToString(separator) { it.toUByte().toHex(2) }
+fun ByteArray.encodeToHex(separator: String = " "): String = joinToString(separator) { it.toUByte().encodeToHex(2) }
+fun Collection<Byte>.encodeToHex(separator: String = " "): String = joinToString(separator) { it.toUByte().encodeToHex(2) }
 
 fun ByteArray.toDump(wide: Boolean = false): String = toDumpLines(wide).joinToString("\n")
 
@@ -94,10 +94,10 @@ fun ByteArray.toDumpLines(wide: Boolean = false): List<String> {
                     line.append(dumpChars(i - lineSize))
                     lines.add(line.toString())
                 }
-                line = StringBuilder(i.toHex(4))
+                line = StringBuilder(i.encodeToHex(4))
                 line.append(' ')
             }
-            line!!.append((this[i].toUByte()).toHex(2))
+            line!!.append((this[i].toUByte()).encodeToHex(2))
             line.append(' ')
         }
         if (line != null) {

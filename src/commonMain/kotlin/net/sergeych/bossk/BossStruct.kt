@@ -2,7 +2,7 @@ package net.sergeych.boss_serialization_mp
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import net.sergeych.mptools.toHex
+import net.sergeych.mptools.encodeToHex
 import kotlin.collections.HashMap
 
 /**
@@ -86,7 +86,7 @@ class BossStruct(private val __source: MutableMap<String, @Contextual Any?> = Ha
             }
 
         private fun formatBinary(item: ByteArray): String {
-            val start = item.take(7).joinToString(" ") { it.toHex(2) }
+            val start = item.take(7).joinToString(" ") { it.encodeToHex(2) }
             return if (item.size <= 7)
                 "|$start|"
             else

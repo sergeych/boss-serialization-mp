@@ -10,7 +10,7 @@ import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.boss_serialization_mp.BossEncoder
 import net.sergeych.boss_serialization_mp.decodeBoss
 import net.sergeych.mptools.toDump
-import net.sergeych.mptools.toHex
+import net.sergeych.mptools.encodeToHex
 import net.sergeych.mptools.truncateToSeconds
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -81,7 +81,7 @@ internal class BossCodecTests {
     @Test
     fun toHex() {
         val x: Byte = -1
-        assertEquals("FF", x.toHex())
+        assertEquals("FF", x.encodeToHex())
         val c = byteArrayOf(
             -62,
             43,

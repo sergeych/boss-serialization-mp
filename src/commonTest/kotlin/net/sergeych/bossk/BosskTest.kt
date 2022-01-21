@@ -3,7 +3,7 @@ package net.sergeych.bossk
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlinx.datetime.Instant
 import net.sergeych.mptools.decodeHex
-import net.sergeych.mptools.toHex
+import net.sergeych.mptools.encodeToHex
 import net.sergeych.platform.runTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -34,7 +34,7 @@ class BosskTest {
 //            println("< ${Bossk.pack(bi).toHex()}")
                 assertEquals(
                     "F8 89 11 11 22 22 33 33 44 44 05",
-                    Bossk.pack(BigInteger.parseString("97152833356252188945")).toHex()
+                    Bossk.pack(BigInteger.parseString("97152833356252188945")).encodeToHex()
                 )
                 assertEquals(
                     BigInteger.parseString("97152833356252188945"),
@@ -42,7 +42,7 @@ class BosskTest {
                 )
                 assertEquals(
                     "F8 89 11 11 22 22 33 33 44 44 05",
-                    Bossk.pack(BigInteger.parseString("97152833356252188945")).toHex()
+                    Bossk.pack(BigInteger.parseString("97152833356252188945")).encodeToHex()
                 )
                 assertEquals(
                     BigInteger.parseString("-97152833356252188945"),
@@ -50,7 +50,7 @@ class BosskTest {
                 )
                 assertEquals(
                     "FA 89 11 11 22 22 33 33 44 44 05",
-                    Bossk.pack(BigInteger.parseString("-97152833356252188945")).toHex()
+                    Bossk.pack(BigInteger.parseString("-97152833356252188945")).encodeToHex()
                 )
 
             }
@@ -64,34 +64,34 @@ class BosskTest {
                 assertEquals(17, Bossk.unpack<Any>("88".decodeHex()) as Int)
                 assertContentEquals(bytesFromHex("88"), Bossk.pack(17))
                 assertEquals(99, Bossk.unpack<Any>(bytesFromHex("B8 63")) as Int)
-                assertEquals("B8 63", Bossk.pack(99).toHex())
+                assertEquals("B8 63", Bossk.pack(99).encodeToHex())
                 assertEquals(331, Bossk.unpack<Any>(bytesFromHex("C0 4B 01")) as Int)
-                assertEquals("C0 4B 01", Bossk.pack(331).toHex())
+                assertEquals("C0 4B 01", Bossk.pack(331).encodeToHex())
                 assertEquals(-7, Bossk.unpack<Any>(bytesFromHex("3A")) as Int)
-                assertEquals("3A", Bossk.pack(-7).toHex())
+                assertEquals("3A", Bossk.pack(-7).encodeToHex())
                 assertEquals(-17, Bossk.unpack<Any>(bytesFromHex("8A")) as Int)
-                assertEquals("8A", Bossk.pack(-17).toHex())
+                assertEquals("8A", Bossk.pack(-17).encodeToHex())
                 assertEquals(-99, Bossk.unpack<Any>(bytesFromHex("BA 63")) as Int)
-                assertEquals("BA 63", Bossk.pack(-99).toHex())
+                assertEquals("BA 63", Bossk.pack(-99).encodeToHex())
                 assertEquals(-331, Bossk.unpack<Any>(bytesFromHex("C2 4B 01")) as Int)
-                assertEquals("C2 4B 01", Bossk.pack(-331).toHex())
+                assertEquals("C2 4B 01", Bossk.pack(-331).encodeToHex())
                 assertEquals(
                     13457559825L,
                     Bossk.unpack<Any>(bytesFromHex("D8 11 11 22 22 03")) as Long
                 )
-                assertEquals("D8 11 11 22 22 03", Bossk.pack(13457559825L).toHex())
+                assertEquals("D8 11 11 22 22 03", Bossk.pack(13457559825L).encodeToHex())
                 assertEquals(
                     -13457559825L,
                     Bossk.unpack<Any>(bytesFromHex("DA 11 11 22 22 03")) as Long
                 )
-                assertEquals("DA 11 11 22 22 03", Bossk.pack(-13457559825L).toHex())
+                assertEquals("DA 11 11 22 22 03", Bossk.pack(-13457559825L).encodeToHex())
                 assertEquals(
                     4919112987704430865L,
                     Bossk.unpack<Any>(bytesFromHex("F0 11 11 22 22 33 33 44 44")) as Long
                 )
                 assertEquals(
                     "F0 11 11 22 22 33 33 44 44",
-                    Bossk.pack(4919112987704430865L).toHex()
+                    Bossk.pack(4919112987704430865L).encodeToHex()
                 )
                 assertEquals(
                     -4919112987704430865L,
@@ -99,19 +99,19 @@ class BosskTest {
                 )
                 assertEquals(
                     "F2 11 11 22 22 33 33 44 44",
-                    Bossk.pack(-4919112987704430865L).toHex()
+                    Bossk.pack(-4919112987704430865L).encodeToHex()
                 )
-                assertEquals("B0", Bossk.pack(22).toHex())
-                assertEquals("B8 17", Bossk.pack(23).toHex())
-                assertEquals("B0", Bossk.pack(22).toHex())
+                assertEquals("B0", Bossk.pack(22).encodeToHex())
+                assertEquals("B8 17", Bossk.pack(23).encodeToHex())
+                assertEquals("B0", Bossk.pack(22).encodeToHex())
                 assertEquals(22, Bossk.unpack<Any>("B0".decodeHex()) as Int)
                 assertEquals(23, Bossk.unpack<Any>("B8 17".decodeHex()) as Int)
                 for (i in 0..799) {
                     assertEquals(i, Bossk.unpack<Any>(Bossk.pack(i)) as Int)
                     assertEquals(-i, Bossk.unpack<Any>(Bossk.pack(-i)) as Int)
                 }
-                assertEquals("B8 1E", Bossk.pack(30).toHex())
-                assertEquals("B8 1F", Bossk.pack(31).toHex())
+                assertEquals("B8 1E", Bossk.pack(30).encodeToHex())
+                assertEquals("B8 1F", Bossk.pack(31).encodeToHex())
             }
         }
 
@@ -119,14 +119,14 @@ class BosskTest {
         fun testStringsAndBinaries() {
             return runTest {
                 assertEquals("Hello", Bossk.unpack("2B 48 65 6C 6C 6F".decodeHex()))
-                assertEquals("2B 48 65 6C 6C 6F", Bossk.pack("Hello").toHex())
+                assertEquals("2B 48 65 6C 6C 6F", Bossk.pack("Hello").encodeToHex())
                 val bb = "00 01 02 03 04 05".decodeHex()
                 val rr = Bossk.unpack<ByteArray>("34 00 01 02 03 04 05".decodeHex())
-                assertEquals(bb.toHex(), rr.toHex())
+                assertEquals(bb.encodeToHex(), rr.encodeToHex())
                 val encoded = Bossk.pack(rr)
-                assertEquals("34 00 01 02 03 04 05", encoded.toHex())
+                assertEquals("34 00 01 02 03 04 05", encoded.encodeToHex())
                 val ba = byteArrayOf(0, 1, 2, 3, 4, 5)
-                assertEquals("34 00 01 02 03 04 05", Bossk.pack(ba).toHex())
+                assertEquals("34 00 01 02 03 04 05", Bossk.pack(ba).encodeToHex())
 
                 // Should pach utf8
                 assertEquals("Абвгд", Bossk.unpack(Bossk.pack("Абвгд")))
@@ -139,15 +139,15 @@ class BosskTest {
         fun testConstants() {
             return runTest {
                 assertEquals(0, Bossk.unpack<Any>(fromHex("00")) as Int)
-                assertEquals("00", Bossk.pack(0).toHex())
+                assertEquals("00", Bossk.pack(0).encodeToHex())
                 assertEquals(true, Bossk.unpack(fromHex("61")))
-                assertEquals("61", Bossk.pack(true).toHex())
+                assertEquals("61", Bossk.pack(true).encodeToHex())
                 assertEquals(false, Bossk.unpack(fromHex("69")))
-                assertEquals("69", Bossk.pack(false).toHex())
+                assertEquals("69", Bossk.pack(false).encodeToHex())
                 assertEquals(1.0, Bossk.unpack(fromHex("11")), 1e-6)
-                assertEquals("08", Bossk.pack(1).toHex())
+                assertEquals("08", Bossk.pack(1).encodeToHex())
                 assertEquals(-1.0, Bossk.unpack(fromHex("21")), 1e-6)
-                assertEquals("0A", Bossk.pack(-1).toHex())
+                assertEquals("0A", Bossk.pack(-1).encodeToHex())
                 assertEquals(0.0, Bossk.unpack<Any>(fromHex("09")) as Double, 1e-6)
             }
         }
@@ -189,7 +189,7 @@ class BosskTest {
                 val date = Bossk.unpack<Instant>(fromHex("79 2A 24 0E 10 85"))
                 assertNotNull(date)
                 assertEquals(date.epochSeconds, 1375965738L)
-                assertEquals("79 2A 24 0E 10 85", Bossk.pack(date).toHex())
+                assertEquals("79 2A 24 0E 10 85", Bossk.pack(date).encodeToHex())
             }
         }
 
@@ -197,7 +197,7 @@ class BosskTest {
         @Test
         fun testDouble() {
             return runTest {
-                assertEquals("39 3C BD FC B1 F9 E2 24 29", Bossk.pack(17.37e-111).toHex())
+                assertEquals("39 3C BD FC B1 F9 E2 24 29", Bossk.pack(17.37e-111).encodeToHex())
                 assertEquals(17.37e-111, Bossk.unpack<Double>(fromHex("39 3C BD FC B1 F9 E2 24 29")), 1e-6)
             }
         }

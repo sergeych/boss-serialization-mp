@@ -109,18 +109,18 @@ object Bossk {
         throw TypeException("Boss can't dump this object", ex)
     }
 
-    suspend fun <T> unpackWith(converter: Converter?, source: ByteArray): T =
-        Reader(source.openChannel(), converter).read()
+    fun <T> unpackWith(converter: Converter?, source: ByteArray): T =
+        ByteArrayReader(source, converter).read()
 
-    suspend fun <T> unpack(source: ByteArray): T = unpackWith(null, source)
+    fun <T> unpack(source: ByteArray): T = unpackWith(null, source)
 
 
     private fun traceObject(prefix: String, obj: Any?): String = when (obj) {
         is ByteArray -> {
             if (obj.size > 30)
-                prefix + obj.slice(0..29).toHex() + "...(${obj.size} bytes)"
+                prefix + obj.slice(0..29).encodeToHex() + "...(${obj.size} bytes)"
             else
-                "$prefix${obj.toHex()}"
+                "$prefix${obj.encodeToHex()}"
         }
         is Array<*> -> traceList(prefix, obj.toList())
         is List<*> -> traceList(prefix, obj)

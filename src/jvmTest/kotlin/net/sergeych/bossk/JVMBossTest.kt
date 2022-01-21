@@ -2,7 +2,7 @@ package net.sergeych.bossk
 
 import kotlinx.datetime.Instant
 import net.sergeych.mptools.decodeHex
-import net.sergeych.mptools.toHex
+import net.sergeych.mptools.encodeToHex
 import net.sergeych.platform.runTest
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -43,11 +43,11 @@ internal class JVMBossTest {
             for (x in data) list.add(x)
             assertEquals(
                 "36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(data)
-                    .toHex()
+                    .encodeToHex()
             )
             assertEquals(
                 "36 00 61 69 11 21 33 68 65 6C 6C 6F 21", Bossk.pack(list)
-                    .toHex()
+                    .encodeToHex()
             )
             val iarray = ArrayList<Int>()
             iarray.add(10)
@@ -55,7 +55,7 @@ internal class JVMBossTest {
             iarray.add(1)
             iarray.add(2)
             assertEquals(iarray, Bossk.unpack(fromHex("26 50 A0 08 10")))
-            assertEquals("26 50 A0 08 10", Bossk.pack(iarray).toHex())
+            assertEquals("26 50 A0 08 10", Bossk.pack(iarray).encodeToHex())
             val ba = byteArrayOf(0, 1, 2, 3, 4, 5)
             val bb = arrayOf(ba, ba)
             val x = Bossk.unpack<List<*>>(Bossk.pack(bb))
@@ -69,17 +69,17 @@ internal class JVMBossTest {
     fun testConstants() {
         return runTest {
             assertEquals(0, Bossk.unpack<Any>(fromHex("00")) as Int)
-            assertEquals("00", Bossk.pack(0).toHex())
+            assertEquals("00", Bossk.pack(0).encodeToHex())
             assertEquals(true, Bossk.unpack(fromHex("61")))
-            assertEquals("61", Bossk.pack(true).toHex())
+            assertEquals("61", Bossk.pack(true).encodeToHex())
             assertEquals(false, Bossk.unpack(fromHex("69")))
-            assertEquals("69", Bossk.pack(false).toHex())
+            assertEquals("69", Bossk.pack(false).encodeToHex())
             assertEquals(1.0, Bossk.unpack(fromHex("11")), 1e-6)
-            assertEquals("11", Bossk.pack(1.0).toHex())
+            assertEquals("11", Bossk.pack(1.0).encodeToHex())
             assertEquals(-1.0, Bossk.unpack(fromHex("21")), 1e-6)
-            assertEquals("21", Bossk.pack(-1.0).toHex())
+            assertEquals("21", Bossk.pack(-1.0).encodeToHex())
             assertEquals(0.0, Bossk.unpack<Any>(fromHex("09")) as Double, 1e-6)
-            assertEquals("09", Bossk.pack(0.0).toHex())
+            assertEquals("09", Bossk.pack(0.0).encodeToHex())
         }
     }
 
