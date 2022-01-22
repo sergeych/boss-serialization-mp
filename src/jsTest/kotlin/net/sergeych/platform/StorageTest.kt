@@ -1,12 +1,15 @@
+@file:Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE", "UNUSED_VALUE")
+
 package net.sergeych.platform
 
 import kotlinx.browser.localStorage
-import net.sergeych.boss_serialization_mp.DefaultBinaryStorage
-import net.sergeych.boss_serialization_mp.DefaultKVStorage
-import net.sergeych.boss_serialization_mp.kvStorage
+import kotlinx.browser.sessionStorage
+import net.sergeych.boss_serialization_mp.*
 import kotlin.test.*
 
 class TestLocalStorage {
+
+    fun DefaultKVStorage(name: String) = KVStorage(BrowserBinaryStorage(sessionStorage,name))
 
     @Test
     fun testNamedLocalStorage() {
@@ -23,8 +26,8 @@ class TestLocalStorage {
         y1 = 142
         println(ds.keys)
         println(ds1.keys)
-        assertEquals( setOf("x", "y"), DefaultBinaryStorage("test_1").keys)
-        assertEquals( setOf("x1", "y"), DefaultBinaryStorage("test_2_long").keys)
+        assertEquals( setOf("x", "y"), BrowserBinaryStorage(sessionStorage,"test_1").keys)
+        assertEquals( setOf("x1", "y"), BrowserBinaryStorage(sessionStorage,"test_2_long").keys)
 
         var r = DefaultKVStorage("test_1")
         assertEquals("foo", r["x"])

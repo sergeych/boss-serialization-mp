@@ -15,8 +15,20 @@ interface KVBinaryStorage {
     operator fun set(key: String, value: ByteArray)
     fun remove(key: String): ByteArray?
     val keys: Set<String>
+
     fun clear() {
         for (k in keys) remove(k)
+    }
+
+    fun addAll(from: KVBinaryStorage) {
+        for( k in from.keys ) from[k]?.let { this[k] = it }
+    }
+
+    /**
+     * Most storages do not need explicit save, but sometimes it could be very useful
+     */
+    fun save() {
+
     }
 }
 
@@ -30,6 +42,7 @@ class KVStorage(val storage: KVBinaryStorage) {
 
     inline operator fun <reified T> get(key: String): T? = get(typeOf<T>(), key)
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> get(type: KType, key: String): T? {
         val s = storage[key] ?: return null
         val value = Bossk.unpack<Any>(s)
@@ -54,14 +67,26 @@ class KVStorage(val storage: KVBinaryStorage) {
         storage.remove(key)
     }
 
+    @Suppress("unused")
     inline fun <reified T> remove(key: String): T? = get<T>(key)?.also { storage.remove(key) }
 
     fun clear() {
         storage.clear()
     }
 
+    @Suppress("unused")
+    fun addAll(from: KVStorage) { storage.addAll(from.storage) }
+
     val keys: Set<String>
         get() = storage.keys
+
+    /**
+     * In some cases the storage we use to hold data support explicit save(), so this method let call it.
+     * In most cases this call does nothing.
+     */
+    fun save() {
+        storage.save()
+    }
 }
 
 // Alas this one does not fowk with JS 1.6.10... waiting...
@@ -172,5 +197,19 @@ inline fun <reified T> optKvStorage(
     return KVStorageNullableDelegate<T>(typeOf<T>(), storage, overrideName)
 }
 
-expect fun DefaultBinaryStorage(storageName: String): KVBinaryStorage
 
+class MemoryKVBinaryStorage : KVBinaryStorage {
+
+    val data = mutableMapOf<String, ByteArray>()
+
+    override fun get(key: String): ByteArray? = data[key]
+
+    override fun set(key: String, value: ByteArray) {
+        data[key] = value
+    }
+
+    override fun remove(key: String): ByteArray? = data.remove(key)
+
+    override val keys
+        get() = data.keys
+}

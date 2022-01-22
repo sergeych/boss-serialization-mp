@@ -23,6 +23,8 @@ This version is slighly different as in most cases it does not require suspend f
 * Fixed MP issue with ByteArray / Uint8Array ambiguity when encoding
 * Added very useful non-async variants of encoder/decoder, allowing sync operations also on JS
 * ByteArray encoding/decoding and de/serializing has been migrated to use sync versions (optimization)
+* Added multiplatform effective ByteArray base64 tools
+* Migrated KVStorage: store anything that can be serialized or packed with boss in some generic binary storage, with property delegates and sample storage for JS sessionStore and localStore.
 
 ### 0.0.2-SNAPSHOT: 
 

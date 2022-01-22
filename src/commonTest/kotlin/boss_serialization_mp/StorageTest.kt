@@ -1,29 +1,13 @@
+@file:Suppress("UNUSED_VALUE")
+
 package boss_serialization_mp
 
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
-import net.sergeych.boss_serialization_mp.KVBinaryStorage
-import net.sergeych.boss_serialization_mp.KVStorage
-import net.sergeych.boss_serialization_mp.kvStorage
-import net.sergeych.boss_serialization_mp.optKvStorage
+import net.sergeych.boss_serialization_mp.*
 import net.sergeych.mptools.truncateToSeconds
 import kotlin.test.*
 
-class TestSStorage : KVBinaryStorage {
-
-    val data = mutableMapOf<String, ByteArray>()
-
-    override fun get(key: String): ByteArray? = data[key]
-
-    override fun set(key: String, value: ByteArray) {
-        data[key] = value
-    }
-
-    override fun remove(key: String): ByteArray? = data.remove(key)
-
-    override val keys
-        get() = data.keys
-}
 
 class StorageTest {
 
@@ -36,7 +20,7 @@ class StorageTest {
 
     @Test
     fun testStorage() {
-        val s = KVStorage(TestSStorage())
+        val s = KVStorage(MemoryKVBinaryStorage())
         assertNull(s["foo"])
         s["foo"] = "bar"
         assertEquals("bar", s.get<String>("foo"))

@@ -1,6 +1,5 @@
 package net.sergeych.boss_serialization_mp
 
-import kotlinx.browser.localStorage
 import net.sergeych.mptools.decodeBase64Compact
 import net.sergeych.mptools.encodeToBase64Compact
 import org.w3c.dom.Storage
@@ -13,7 +12,7 @@ import org.w3c.dom.set
  * are to some extent independent. Clearing such storage should not affect other storages sharing the same
  * browser `dom.Storage`.
  */
-class BrowserBinaryStorage(val storage: Storage, val name: String = "") : KVBinaryStorage {
+class BrowserBinaryStorage(val storage: Storage, name: String = "") : KVBinaryStorage {
 
     private val usePrefix = name != ""
     private val preix = "_:_$name:"
@@ -43,7 +42,3 @@ class BrowserBinaryStorage(val storage: Storage, val name: String = "") : KVBina
         }
 }
 
-actual fun DefaultBinaryStorage(storageName: String): KVBinaryStorage =
-    BrowserBinaryStorage(localStorage, storageName)
-
-fun DefaultKVStorage(storageName: String) = KVStorage(DefaultBinaryStorage(storageName))
