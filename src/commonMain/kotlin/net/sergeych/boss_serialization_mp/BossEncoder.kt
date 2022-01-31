@@ -71,7 +71,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-        return currentTagOrNull?.let { tag -> BossEncoder(BossStruct().also { currentObject[tag] = it }) }
+        return currentTagOrNull?.let { tag -> BossEncoder(BossStruct().also { currentObject[tag] = it; popTag() }) }
             ?: this
     }
 

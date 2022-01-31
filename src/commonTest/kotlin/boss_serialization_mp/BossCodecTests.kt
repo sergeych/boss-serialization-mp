@@ -12,10 +12,7 @@ import net.sergeych.boss_serialization_mp.decodeBoss
 import net.sergeych.mptools.toDump
 import net.sergeych.mptools.encodeToHex
 import net.sergeych.mptools.truncateToSeconds
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertNull
+import kotlin.test.*
 
 @Serializable
 sealed class TBase
@@ -28,6 +25,30 @@ class TB(val b: String) : TBase()
 
 @Serializable
 class TTest(val list: List<TBase>)
+
+@Serializable
+sealed class UBase {
+    @Serializable
+    data class U1(val i: Int): UBase()
+
+    @Serializable
+    data class U2(val s: String): UBase()
+}
+
+@Serializable
+sealed class VBase {
+    @Serializable
+    data class V1(val u: UBase,val b: Boolean): VBase()
+
+    @Serializable
+    data class U2(val d: Double): VBase()
+}
+
+@Serializable
+class TCompound(
+    val tt: TTest,
+    val ss: String
+)
 
 internal class BossCodecTests {
 
@@ -49,6 +70,32 @@ internal class BossCodecTests {
 //            println(y)
         assertEquals(x, y)
         assertEquals(x, BossDecoder.decodeFrom<FBI>(BossEncoder.encode(x)))
+    }
+
+    inline fun <reified T: Any>t(arg: T) {
+        val x = BossEncoder.encodeToStruct(arg)
+        try {
+            if (BossDecoder.decodeFrom<T>(x) != arg) {
+                println("t failed on $arg")
+                println("encoded: $x")
+                fail("failed to re-encode $arg")
+            } else {
+                println("OK: $x")
+            }
+        }
+        catch(e: Exception) {
+            println("failed with exception on $arg")
+            println("encoded: $x")
+            throw e
+        }
+    }
+
+    @Test
+    fun serializeNested() {
+        println(BossEncoder.encodeToStruct(UBase.U1(42) as UBase))
+        t(UBase.U1(42) as UBase)
+        t(UBase.U2("foo") as UBase)
+        t(VBase.V1(UBase.U1(422),true) as VBase)
     }
 
     @Test
