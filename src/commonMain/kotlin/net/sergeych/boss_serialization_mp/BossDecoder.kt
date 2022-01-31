@@ -170,6 +170,7 @@ class BossDecoder(
                             decoder.decodeSerializableValue(d) as T
                         }
                         null -> null as T
+                        is String, is ByteArray -> raw as T
                         else -> {
                             val decoder = BossDecoder(raw as Map<String, Any?>, d.descriptor)
                             d.deserialize(decoder) as T

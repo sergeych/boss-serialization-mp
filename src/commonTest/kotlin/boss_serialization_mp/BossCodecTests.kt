@@ -141,6 +141,15 @@ internal class BossCodecTests {
         assertNull(y)
     }
 
+    @Test
+    fun serializeSimpleTypes() {
+        val x = BossEncoder.encode("hello")
+        println(x.toDump())
+        println(x.decodeBoss<String>())
+        assertEquals("hello", x.decodeBoss<String>())
+
+    }
+
     // Not sure whether it is actually needed?
 //    @Test fun serializeListOrStruct() {
 //        return runTest {

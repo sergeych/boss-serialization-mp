@@ -76,6 +76,8 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
     }
 
     companion object {
+        // IMPORTANT!! NOTE: <reified T : Any> is a temorary workaround of the stupid js compiler bug!
+
         /**
          * Encode some `@Serializable` value to a packed binary boss data
          */
@@ -121,6 +123,7 @@ inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
                 BossListEncoder(list).encodeSerializableValue(serializer,value)
                 write(list)
             }
+            is String, is ByteArray -> write(value)
             else -> {
                 val bs = BossStruct()
                 BossEncoder(bs).encodeSerializableValue(serializer, value)
