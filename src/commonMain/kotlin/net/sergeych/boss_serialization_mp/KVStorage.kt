@@ -21,7 +21,7 @@ interface KVBinaryStorage {
     }
 
     fun addAll(from: KVBinaryStorage) {
-        for( k in from.keys ) from[k]?.let { this[k] = it }
+        for (k in from.keys) from[k]?.let { this[k] = it }
     }
 
     /**
@@ -75,7 +75,9 @@ class KVStorage(val storage: KVBinaryStorage) {
     }
 
     @Suppress("unused")
-    fun addAll(from: KVStorage) { storage.addAll(from.storage) }
+    fun addAll(from: KVStorage) {
+        storage.addAll(from.storage)
+    }
 
     val keys: Set<String>
         get() = storage.keys
@@ -175,6 +177,9 @@ inline fun <reified T> kvStorage(storage: KVStorage, overrideName: String? = nul
     return KVStorageDelegate<T>(typeOf<T>(), storage, overrideName)
 }
 
+inline fun <reified T> stored(storage: KVStorage, overrideName: String? = null): KVStorageDelegate<T> =
+    kvStorage(storage, overrideName)
+
 /**
  * The property delegate to access data in the [KVStorage] in nullable way, where null means storage has no
  * data for this property:
@@ -196,6 +201,11 @@ inline fun <reified T> optKvStorage(
 ): KVStorageNullableDelegate<T> {
     return KVStorageNullableDelegate<T>(typeOf<T>(), storage, overrideName)
 }
+
+inline fun <reified T> optStored(
+    storage: KVStorage,
+    overrideName: String? = null
+): KVStorageNullableDelegate<T> = optKvStorage(storage, overrideName)
 
 
 class MemoryKVBinaryStorage : KVBinaryStorage {

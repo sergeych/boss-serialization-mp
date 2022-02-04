@@ -1,7 +1,7 @@
 package net.sergeych.boss_serialization_mp
 
-import net.sergeych.mptools.decodeBase64Compact
-import net.sergeych.mptools.encodeToBase64Compact
+import net.sergeych.mp_tools.decodeBase64Compact
+import net.sergeych.mp_tools.encodeToBase64Compact
 import org.w3c.dom.Storage
 import org.w3c.dom.get
 import org.w3c.dom.set

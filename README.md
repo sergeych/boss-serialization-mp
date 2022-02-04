@@ -20,7 +20,7 @@ Due to multiplatform nature it has several differences from java version:
 
 This version is slighly different as in most cases it does not require suspend fun to call boss operations. Also, some refactoring make [Bossk] codec more clear that caused one deprecation.
 
-* fixed a bug with polymorhic serialization≠
+* fixed a bug with polymorhic serialization
 * `BossEncoder.encode` and `ByteArray.decodeBoss` now accepts also `ByteArray` and `String` (before required serializable object instances and some collections and null) 
 * Fixed MP issue with ByteArray / Uint8Array ambiguity when encoding
 * Added very useful non-async variants of encoder/decoder, allowing sync operations also on JS

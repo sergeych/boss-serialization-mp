@@ -1,7 +1,7 @@
 package net.sergeych.bossk
 
-import net.sergeych.mptools.decodeBase64
-import net.sergeych.mptools.encodeToBase64
+import net.sergeych.mp_tools.decodeBase64
+import net.sergeych.mp_tools.encodeToBase64
 import java.util.*
 import kotlin.random.Random
 import kotlin.test.*

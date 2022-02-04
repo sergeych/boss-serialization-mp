@@ -49,6 +49,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
                 implementation("com.ionspin.kotlin:bignum:0.3.3")
+                implementation("net.sergeych:mp_stools:1.0.0-SNAPSHOT")
 //                api("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.3.1")
             }
         }

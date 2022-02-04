@@ -1,5 +1,7 @@
 package net.sergeych.platform
 
+import net.sergeych.mp_tools.decodeBase64
+import net.sergeych.mp_tools.encodeToBase64
 import net.sergeych.mptools.*
 import kotlin.random.Random
 import kotlin.test.Test
