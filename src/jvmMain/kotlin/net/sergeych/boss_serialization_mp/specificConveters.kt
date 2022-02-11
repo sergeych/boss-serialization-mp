@@ -18,7 +18,6 @@ class ZonedDateTimePlatofrmConverter : SpecificConverter {
 
     override fun deserialize(bossPacked: Any): Any =
         ZonedDateTime.ofInstant((bossPacked as Instant).toJavaInstant(), ZoneId.systemDefault())
-
 }
 
 actual val platfrmSpecificConverters: Iterable<SpecificConverter> = listOf(ZonedDateTimePlatofrmConverter())

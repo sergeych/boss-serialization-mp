@@ -1,15 +1,16 @@
-@file:UseSerializers(ZonedDateTimeSerializer::class)
+@file:UseSerializers(ZonedDateTimeSerializer::class, BigDecimalSerializer::class, BigDecimalSerializerMp::class)
 @file:OptIn(ExperimentalSerializationApi::class)
 
 package boss_serialization_mp
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import net.sergeych.boss_serialization.BossDecoder
-import net.sergeych.boss_serialization_mp.BossEncoder
-import net.sergeych.boss_serialization_mp.ZonedDateTimeSerializer
+import net.sergeych.boss_serialization_mp.*
+import net.sergeych.mptools.toDump
 import net.sergeych.platform.runTest
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -39,5 +40,21 @@ internal class JvmSerializerTest {
             assertEquals(x, y)
             assertEquals(x, BossDecoder.decodeFrom<FBZ>(BossEncoder.encode(x)))
         }
+    }
+
+    @Serializable
+    data class TestDecimals(val mp: BigDecimal,val j: java.math.BigDecimal)
+
+    @Test
+    fun javaBigintSerialization() {
+        val mpx = BigDecimal.parseString("1.22")
+        val jx = java.math.BigDecimal("1.22")
+        val src = TestDecimals(mpx, jx)
+        val packed = BossEncoder.encode(src)
+//        val packed = BossEncoder.encode(TestMPDecimal(mpx))
+        println(packed.toDump())
+        val u = packed.decodeBoss<TestDecimals>()
+        println("got $u")
+        assertEquals(src, u)
     }
 }

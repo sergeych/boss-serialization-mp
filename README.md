@@ -16,10 +16,12 @@ Due to multiplatform nature it has several differences from java version:
 
 ## Recent updates
 
-### 0.1.1-SNAPSHOT
+### 0.1.1
 
 This version is slighly different as in most cases it does not require suspend fun to call boss operations. Also, some refactoring make [Bossk] codec more clear that caused one deprecation.
 
+* Added serializes for BigDecimal: multipolatform one based on [kotlin-multiplatform-bignum
+](https://github.com/ionspin/kotlin-multiplatform-bignum) which is already used in Boss codec there, and compatible `java.math.Bignum` on JVM platform.
 * fixed a bug with polymorhic serialization
 * `BossEncoder.encode` and `ByteArray.decodeBoss` now accepts also `ByteArray` and `String` (before required serializable object instances and some collections and null) 
 * Fixed MP issue with ByteArray / Uint8Array ambiguity when encoding
@@ -39,6 +41,13 @@ This version is slighly different as in most cases it does not require suspend f
 On JS platofrm when encoding it is not always possible to distinguish between double and integer/long values, so +1.0 will be encoded to int +1, while 1.211 will be rpoperly encoded to a double. Decoding works well.
 
 It is necessary to properly use `kotlinx.datetimme.Instant` instead of java variants. If, by mistake, the java standard library instant will be used, it will be silently serialized by first available serializer and most likely will be encoded as a String in boss binary, not the expected datetime boss type. This issue might be addressed in the future. To cope with it there is a supplied `ZonedDateTimeConverter` that could be used to convert from/to `ZonedDateTime`, and it could be extended also to fix unexpected `Instant`.
+
+To use BigDecimal serialization, please include one of provided serializers, which are mutuable compatible (using string representation, to comply also with Universa conract data standards):
+
+- [BigDecimalSerializerMp] on all platforms, to use with [kotlin-multiplatform-bignum](https://github.com/ionspin/kotlin-multiplatform-bignum) variant of `BigDecimal`.
+- [BigDecimalSerializer] only on JVM
+
+
 
 ## General information
 
