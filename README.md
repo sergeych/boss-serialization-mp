@@ -16,6 +16,10 @@ Due to multiplatform nature it has several differences from java version:
 
 ## Recent updates
 
+### 0.1.2-SNAPSHOT
+
+* fixed KVStorage `clear()` concurrent modification bug
+
 ### 0.1.1
 
 This version is slighly different as in most cases it does not require suspend fun to call boss operations. Also, some refactoring make [Bossk] codec more clear that caused one deprecation.

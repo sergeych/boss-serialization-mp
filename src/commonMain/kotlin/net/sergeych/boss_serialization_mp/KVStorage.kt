@@ -17,7 +17,7 @@ interface KVBinaryStorage {
     val keys: Set<String>
 
     fun clear() {
-        for (k in keys) remove(k)
+        for (k in keys.toList()) remove(k)
     }
 
     fun addAll(from: KVBinaryStorage) {
