@@ -1,22 +1,29 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
     kotlin("multiplatform") version "1.6.10"
     kotlin("plugin.serialization") version "1.6.10"
     `maven-publish`
 }
 
-
 group = "net.sergeych"
 version = "0.1.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven("https://maven.universablockchain.com")
+}
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor(30, "seconds")
 }
 
 kotlin {
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
         }
         withJava()
         testRuns["test"].executionTask.configure {
@@ -24,6 +31,9 @@ kotlin {
         }
     }
     js(BOTH) {
+        compilations.all {
+            kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+        }
         browser {
         }
 //        useCommonJs()
@@ -43,13 +53,16 @@ kotlin {
         listOf(jvm(), js()).map { it.name } + "kotlinMultiplatform"
 
     sourceSets {
+        all {
+            languageSettings.optIn("kotlin.RequiresOptIn")
+        }
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
                 implementation("com.ionspin.kotlin:bignum:0.3.4")
-                implementation("net.sergeych:mp_stools:1.0.0-SNAPSHOT")
+                implementation("net.sergeych:mp_stools:[1.1.0-SNAPSHOT,)")
 //                api("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.3.1")
             }
         }
@@ -59,8 +72,6 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            dependencies {
-            }
         }
         val jvmTest by getting
 

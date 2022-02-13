@@ -1,6 +1,10 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+@file:Suppress("unused")
+
 package net.sergeych.boss_serialization_mp
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.ExperimentalSerializationApi
 import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.bossk.Bossk
 import kotlin.reflect.KProperty
@@ -55,7 +59,7 @@ class KVStorage(val storage: KVBinaryStorage) {
 
     inline operator fun <reified T> set(key: String, value: T?) = set(typeOf<T>(), key, value)
 
-    inline fun set(type: KType, key: String, value: Any?) {
+    fun set(type: KType, key: String, value: Any?) {
         when (value) {
             null -> storage.remove(key)
             is String, is Number, is Boolean, is Instant, is ByteArray -> storage[key] = Bossk.pack(value)
