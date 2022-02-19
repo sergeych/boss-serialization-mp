@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_IS_NOT_ENABLED", "UNCHECKED_CAST")
+@file:Suppress("EXPERIMENTAL_IS_NOT_ENABLED", "UNCHECKED_CAST", "KDocUnresolvedReference")
 
 package net.sergeych.boss_serialization
 
@@ -52,16 +52,16 @@ class BossDecoder(
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
         return when (descriptor.kind) {
             is StructureKind.LIST -> BossListDecoder(currentObject[currentTag] as List<Any?>)
-            is StructureKind.CLASS, PolymorphicKind.SEALED -> currentTagOrNull?.let {
+            is StructureKind.OBJECT, StructureKind.CLASS, PolymorphicKind.SEALED -> currentTagOrNull?.let {
                 checkTagIsStored(it)
                 BossDecoder(currentObject[it] as Map<String, Any?>, descriptor)
             } ?: this
-            is StructureKind.OBJECT -> {
-                if(descriptor.serialName == "kotlin.Unit")
-                    this
-                else
-                    throw SerializationException("unsupported kind: ${descriptor.kind}")
-            }
+//            is StructureKind.OBJECT -> {
+//                if(descriptor.serialName == "kotlin.Unit")
+//                    this
+//                else
+//                    throw SerializationException("unsupported kind: ${descriptor.kind}")
+//            }
             else -> throw SerializationException("unsupported kind: ${descriptor.kind}")
         }
     }

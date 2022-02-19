@@ -19,6 +19,7 @@ Due to multiplatform nature it has several differences from java version:
 ### 0.1.2-SNAPSHOT
 
 * fixed KVStorage `clear()` concurrent modification bug
+* fixed deserialization of objects (useful in sealed inheritance)
 
 ### 0.1.1
 

@@ -57,4 +57,27 @@ internal class JvmSerializerTest {
         println("got $u")
         assertEquals(src, u)
     }
+
+    @Serializable
+    sealed class Status {
+        @Serializable
+        object Fooo: Status() {
+            var bar: String = "123"
+        }
+
+        @Suppress("unused")
+        @Serializable
+        class Barr(val i: Int): Status()
+    }
+
+    @Test
+    fun obejctSerializationTest() {
+        val x: Status = Status.Fooo
+        val encoded = BossEncoder.encode(x)
+        println(encoded.toDump())
+        println(": ${BossDecoder.decodeFrom<BossStruct>(encoded)}")
+        val y = BossDecoder.decodeFrom<Status>(encoded)
+        println(y)
+        assertIs<Status.Fooo>(y)
+    }
 }
