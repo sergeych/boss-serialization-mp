@@ -39,7 +39,6 @@ kotlin {
 //        useCommonJs()
     }
 
-
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
     val nativeTarget = when {
@@ -61,7 +60,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
-                implementation("com.ionspin.kotlin:bignum:0.3.4")
+                api("com.ionspin.kotlin:bignum:0.3.4")
                 implementation("net.sergeych:mp_stools:[1.1.1-SNAPSHOT,)")
             }
         }

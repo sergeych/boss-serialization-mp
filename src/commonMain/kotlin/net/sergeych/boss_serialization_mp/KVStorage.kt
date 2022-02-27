@@ -5,6 +5,7 @@ package net.sergeych.boss_serialization_mp
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
 import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.bossk.Bossk
 import kotlin.reflect.KProperty
@@ -93,8 +94,16 @@ class KVStorage(val storage: KVBinaryStorage) {
     fun save() {
         storage.save()
     }
-}
 
+    @Serializable
+    data class PackedList<T>(val list: List<T>)
+
+    inline fun <reified T> setList(key: String, value: List<T>) {
+        set(key, PackedList(value))
+    }
+
+    inline fun <reified T : Any> getList(key: String): List<T> = get<PackedList<T>>(key)?.list ?: listOf()
+}
 // Alas this one does not fowk with JS 1.6.10... waiting...
 //
 //abstract class PropBase<T>(overrideName: String? = null) : ReadWriteProperty<Any?,T> {
@@ -201,14 +210,14 @@ inline fun <reified T> stored(storage: KVStorage, overrideName: String? = null):
  */
 inline fun <reified T> optKvStorage(
     storage: KVStorage,
-    overrideName: String? = null
+    overrideName: String? = null,
 ): KVStorageNullableDelegate<T> {
     return KVStorageNullableDelegate<T>(typeOf<T>(), storage, overrideName)
 }
 
 inline fun <reified T> optStored(
     storage: KVStorage,
-    overrideName: String? = null
+    overrideName: String? = null,
 ): KVStorageNullableDelegate<T> = optKvStorage(storage, overrideName)
 
 
