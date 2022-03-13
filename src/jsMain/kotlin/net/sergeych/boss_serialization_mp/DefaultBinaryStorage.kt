@@ -35,7 +35,6 @@ class BrowserBinaryStorage(val storage: Storage, name: String = "") : KVBinarySt
             for (i in 0 until storage.length)
                 storage.key(i)?.let {
                     if (!usePrefix || it.startsWith(preix)) {
-                        println("added prefixed: $it")
                         result.add(it.substring(preix.length))
                     }
                 }

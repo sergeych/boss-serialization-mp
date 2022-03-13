@@ -18,6 +18,8 @@ Due to multiplatform nature it has several differences from java version:
 
 ### 0.1.2-SNAPSHOT
 
+* added support for most simple values and lists as root elements in `BossEncoder.encode()` encoders (before you should always use a structure)
+* fixed doubles unpacking
 * fixed KVStorage `clear()` concurrent modification bug
 * fixed deserialization of objects (useful in sealed inheritance)
 

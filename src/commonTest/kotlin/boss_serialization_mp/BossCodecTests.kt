@@ -9,9 +9,11 @@ import kotlinx.serialization.Serializable
 import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.boss_serialization_mp.BossEncoder
 import net.sergeych.boss_serialization_mp.decodeBoss
-import net.sergeych.mptools.toDump
 import net.sergeych.mptools.encodeToHex
+import net.sergeych.mptools.toDump
 import net.sergeych.mptools.truncateToSeconds
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 import kotlin.test.*
 
 @Serializable
@@ -29,26 +31,26 @@ class TTest(val list: List<TBase>)
 @Serializable
 sealed class UBase {
     @Serializable
-    data class U1(val i: Int): UBase()
+    data class U1(val i: Int) : UBase()
 
     @Serializable
-    data class U2(val s: String): UBase()
+    data class U2(val s: String) : UBase()
 }
 
 @Serializable
 sealed class VBase {
     @Serializable
-    data class V1(val u: UBase,val b: Boolean): VBase()
+    data class V1(val u: UBase, val b: Boolean) : VBase()
 
-    @Serializable
-    data class U2(val d: Double): VBase()
+//    @Serializable
+//    data class U2(val d: Double) : VBase()
 }
 
-@Serializable
-class TCompound(
-    val tt: TTest,
-    val ss: String
-)
+//@Serializable
+//class TCompound(
+//    val tt: TTest,
+//    val ss: String,
+//)
 
 internal class BossCodecTests {
 
@@ -72,7 +74,7 @@ internal class BossCodecTests {
         assertEquals(x, BossDecoder.decodeFrom<FBI>(BossEncoder.encode(x)))
     }
 
-    inline fun <reified T: Any>t(arg: T) {
+    inline fun <reified T : Any> t(arg: T) {
         val x = BossEncoder.encodeToStruct(arg)
         try {
             if (BossDecoder.decodeFrom<T>(x) != arg) {
@@ -82,8 +84,30 @@ internal class BossCodecTests {
             } else {
                 println("OK: $x")
             }
+        } catch (e: Exception) {
+            println("failed with exception on $arg")
+            println("encoded: $x")
+            throw e
         }
-        catch(e: Exception) {
+        tBinClass(arg)
+    }
+
+    inline fun <reified T : Any> tBinClass(arg: T) {
+        val cls: KType = typeOf<T>()
+        val x = BossEncoder.encode(cls, arg)
+        try {
+            val ok = when (arg) {
+                is ByteArray -> BossDecoder.decodeFrom<ByteArray>(cls, x) contentEquals  arg
+                else -> BossDecoder.decodeFrom<T>(cls, x) == arg
+            }
+            if (!ok) {
+                println("b/cls t failed on $arg")
+                println("encoded: ${x.toDump()} decoded: ${BossDecoder.decodeFrom<T>(cls, x)}")
+                fail("failed to re-encode $arg")
+            } else {
+                println("OK KType: $x")
+            }
+        } catch (e: Exception) {
             println("failed with exception on $arg")
             println("encoded: $x")
             throw e
@@ -95,7 +119,19 @@ internal class BossCodecTests {
         println(BossEncoder.encodeToStruct(UBase.U1(42) as UBase))
         t(UBase.U1(42) as UBase)
         t(UBase.U2("foo") as UBase)
-        t(VBase.V1(UBase.U1(422),true) as VBase)
+        t(VBase.V1(UBase.U1(422), true) as VBase)
+    }
+
+    @Test
+    fun serializeExtented() {
+//        tBinClass("hello")
+//        tBinClass(byteArrayOf(1, 2, 3, 4, 5))
+//        tBinClass(true)
+//        tBinClass(false)
+//        tBinClass(121)
+//        tBinClass(1213121L)
+//        tBinClass(11.7f)
+        tBinClass(listOf(1,2,3))
     }
 
     @Test
@@ -197,7 +233,7 @@ internal class BossCodecTests {
 
     }
 
-    // Not sure whether it is actually needed?
+// Not sure whether it is actually needed?
 //    @Test fun serializeListOrStruct() {
 //        return runTest {
 //            val a = listOf<Any?>("foo", null, TB("bar"))

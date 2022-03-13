@@ -148,7 +148,11 @@ class BossDecoder(
                             val decoder = BossListDecoder(raw)
                             decoder.decodeSerializableValue(d) as T
                         }
-                        null -> null as T
+                        is String, is ByteArray, is Boolean, is Instant -> raw as T
+                        is Float -> raw.toFloat() as T
+                        is Double -> raw.toDouble() as T
+                        is Int -> raw.toInt() as T
+                        is Long -> raw.toLong() as T
                         else -> {
                             val decoder = BossDecoder(raw as Map<String, Any?>, d.descriptor)
                             d.deserialize(decoder) as T
@@ -157,6 +161,9 @@ class BossDecoder(
                 }
             }
         }
+
+        fun <T: Any?> decodeFrom(cls: KType,packed: ByteArray): T =
+            decodeFrom(cls, Bossk.ByteArrayReader(packed))
 
         fun <T: Any?> decodeFrom(cls: KType,br: Bossk.SyncReader): T {
             return when(cls) {
@@ -170,7 +177,16 @@ class BossDecoder(
                             decoder.decodeSerializableValue(d) as T
                         }
                         null -> null as T
-                        is String, is ByteArray -> raw as T
+                        is String, is ByteArray, is Boolean, is Instant -> raw as T
+                        is Number-> {
+                            when (cls) {
+                                typeOf<Long>() -> raw.toLong() as T
+                                typeOf<Int>() -> raw.toInt() as T
+                                typeOf<Float>() -> raw.toFloat() as T
+                                typeOf<Double>() -> raw.toDouble() as T
+                                else -> throw SerializationException("can't deserialize ${cls}")
+                            }
+                        }
                         else -> {
                             val decoder = BossDecoder(raw as Map<String, Any?>, d.descriptor)
                             d.deserialize(decoder) as T

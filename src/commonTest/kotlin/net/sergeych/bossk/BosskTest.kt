@@ -199,6 +199,13 @@ class BosskTest {
             return runTest {
                 assertEquals("39 3C BD FC B1 F9 E2 24 29", Bossk.pack(17.37e-111).encodeToHex())
                 assertEquals(17.37e-111, Bossk.unpack<Double>(fromHex("39 3C BD FC B1 F9 E2 24 29")), 1e-6)
+                fun t(x: Double) {
+                    assertEquals(x, Bossk.unpack(Bossk.pack(x)), 1e-6)
+                }
+                t(17.37e-111)
+                t(0.0)
+                t(1.0)
+                t(1.1)
             }
         }
     }

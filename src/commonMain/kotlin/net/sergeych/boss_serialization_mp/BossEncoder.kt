@@ -48,7 +48,8 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         when (serializer.descriptor) {
             BossDecoder.bossStructSerializerDescriptor,
             Instant.serializer().descriptor,
-            BossDecoder.byteArraySerializerDescriptor -> {
+            BossDecoder.byteArraySerializerDescriptor,
+            -> {
                 currentObject[currentTag] = value
                 popTag()
             }
@@ -81,9 +82,33 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         /**
          * Encode some `@Serializable` value to a packed binary boss data
          */
-        inline fun <reified T: Any> encode(value: T?): ByteArray {
-            return Bossk.ByteArrayWriter().also { w ->
+        inline fun <reified T : Any> encode(value: T?): ByteArray =
+            Bossk.ByteArrayWriter().also { w ->
                 value?.let { w.encode(it) } ?: w.write(null)
+            }.toByteArray()
+
+        fun <T : Any> encode(cls: KType, value: T?): ByteArray {
+            return Bossk.ByteArrayWriter().also { w ->
+                value?.let {
+                    val serializer = EmptySerializersModule.serializer(cls)
+                    if( value is List<*>) {
+                        val list = mutableListOf<Any?>()
+                        BossListEncoder(list).encodeSerializableValue(serializer, value)
+                        w.write(list)
+                    }
+                    else {
+                        when (cls) {
+                            typeOf<String>(), typeOf<Boolean>(), typeOf<Instant>(), typeOf<ByteArray>(),
+                            typeOf<Int>(), typeOf<Long>(), typeOf<Float>(), typeOf<Double>()
+                            -> w.write(value)
+                            else -> {
+                                val bs = BossStruct()
+                                BossEncoder(bs).encodeSerializableValue(serializer, value)
+                                w.write(bs.toMap())
+                            }
+                        }
+                    }
+                } ?: w.write(null)
             }.toByteArray()
         }
 
@@ -116,14 +141,14 @@ inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
     if (value is BossStruct)
         write(value)
     else {
-        val serializer: KSerializer<T> = EmptySerializersModule.serializer<T>()
+        val serializer: KSerializer<T> = EmptySerializersModule.serializer()
         when (value) {
             is List<*> -> {
                 val list = mutableListOf<Any?>()
-                BossListEncoder(list).encodeSerializableValue(serializer,value)
+                BossListEncoder(list).encodeSerializableValue(serializer, value)
                 write(list)
             }
-            is String, is ByteArray -> write(value)
+            is String, is ByteArray, is Boolean, is Instant, is Number -> write(value)
             else -> {
                 val bs = BossStruct()
                 BossEncoder(bs).encodeSerializableValue(serializer, value)

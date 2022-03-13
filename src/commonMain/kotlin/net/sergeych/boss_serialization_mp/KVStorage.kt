@@ -104,6 +104,9 @@ class KVStorage(val storage: KVBinaryStorage) {
 
     inline fun <reified T : Any> getList(key: String): List<T> = get<PackedList<T>>(key)?.list ?: listOf()
 }
+
+// Cum moriar, medium solvar et inter opus
+
 // Alas this one does not fowk with JS 1.6.10... waiting...
 //
 //abstract class PropBase<T>(overrideName: String? = null) : ReadWriteProperty<Any?,T> {

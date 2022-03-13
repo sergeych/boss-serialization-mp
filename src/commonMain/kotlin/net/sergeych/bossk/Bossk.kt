@@ -511,7 +511,7 @@ object Bossk {
                     read<Any>()
                 }
                 XT_DOUBLE -> {
-                    val data = readBytes(8)
+                    val data = readBytes(8).flip()
                     Double.fromBits(bytesToLong(data))
                 }
                 else -> throw FormatException("Unknown extra code: ${code}")
@@ -657,7 +657,7 @@ object Bossk {
                     read<Any>()
                 }
                 XT_DOUBLE -> {
-                    val data = readBytes(8)
+                    val data = readBytes(8).flip()
                     Double.fromBits(bytesToLong(data))
                 }
                 else -> throw FormatException("Unknown extra code: ${code}")
