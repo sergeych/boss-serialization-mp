@@ -4,7 +4,7 @@
 
 Multiplatform lightweight BOSS format and kotlinx serialization support. Boss codec is completely rewritten in kotlin, providing:
 
-> It is yet in active testing, consider beta stage. Please report any bugs found.
+Stable version: 0.1.2.
 
 - coroutine support: Boss codec uses 'Channel<Byte>' to decode and encode, on every platofrm Very fast.
 - no more big dependencies!
@@ -16,8 +16,9 @@ Due to multiplatform nature it has several differences from java version:
 
 ## Recent updates
 
-### 0.1.2-SNAPSHOT
+### 0.1.2
 
+* basic support for ios target (without platform-specific types, so use KMM ones with ios serialization)
 * added support for most simple values and lists as root elements in `BossEncoder.encode()` encoders (before you should always use a structure)
 * fixed doubles unpacking
 * fixed KVStorage `clear()` concurrent modification bug

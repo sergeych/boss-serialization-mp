@@ -7,12 +7,11 @@ plugins {
 }
 
 group = "net.sergeych"
-version = "0.1.2-SNAPSHOT"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
     maven("https://maven.universablockchain.com")
-    mavenLocal()
 }
 
 configurations.all {
@@ -38,6 +37,7 @@ kotlin {
         }
 //        useCommonJs()
     }
+    ios()
 
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
@@ -61,7 +61,7 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
                 api("com.ionspin.kotlin:bignum:0.3.4")
-                implementation("net.sergeych:mp_stools:[1.1.1-SNAPSHOT,)")
+                implementation("net.sergeych:mp_stools:[1.2.1-SNAPSHOT,)")
             }
         }
         val commonTest by getting {
