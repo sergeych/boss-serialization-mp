@@ -1,13 +1,13 @@
 @file:Suppress("UNUSED_VARIABLE")
 
 plugins {
-    kotlin("multiplatform") version "1.6.10"
-    kotlin("plugin.serialization") version "1.6.10"
+    kotlin("multiplatform") version "1.7.10"
+    kotlin("plugin.serialization") version "1.7.10"
     `maven-publish`
 }
 
 group = "net.sergeych"
-version = "0.1.2"
+version = "0.1.3-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -29,7 +29,7 @@ kotlin {
             useJUnitPlatform()
         }
     }
-    js(BOTH) {
+    js(IR) {
         compilations.all {
             kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
         }
@@ -57,11 +57,14 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+                implementation("net.sergeych:mp_stools:[1.3.2-SNAPSHOT,)")
+                // we take datetime from mp_stools
+//                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
                 api("com.ionspin.kotlin:bignum:0.3.4")
-                implementation("net.sergeych:mp_stools:[1.2.1-SNAPSHOT,)")
             }
         }
         val commonTest by getting {

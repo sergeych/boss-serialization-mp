@@ -10,7 +10,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.boss_serialization_mp.*
-import net.sergeych.mptools.toDump
 import net.sergeych.platform.runTest
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -52,9 +51,9 @@ internal class JvmSerializerTest {
         val src = TestDecimals(mpx, jx)
         val packed = BossEncoder.encode(src)
 //        val packed = BossEncoder.encode(TestMPDecimal(mpx))
-        println(packed.toDump())
+//        println(packed.toDump())
         val u = packed.decodeBoss<TestDecimals>()
-        println("got $u")
+//        println("got $u")
         assertEquals(src, u)
     }
 
@@ -74,10 +73,10 @@ internal class JvmSerializerTest {
     fun obejctSerializationTest() {
         val x: Status = Status.Fooo
         val encoded = BossEncoder.encode(x)
-        println(encoded.toDump())
-        println(": ${BossDecoder.decodeFrom<BossStruct>(encoded)}")
+//        println(encoded.toDump())
+//        println(": ${BossDecoder.decodeFrom<BossStruct>(encoded)}")
         val y = BossDecoder.decodeFrom<Status>(encoded)
-        println(y)
+//        println(y)
         assertIs<Status.Fooo>(y)
     }
 }

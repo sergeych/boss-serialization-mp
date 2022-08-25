@@ -98,7 +98,9 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
                     }
                     else {
                         when (cls) {
+                            typeOf<String?>(), typeOf<Boolean?>(), typeOf<Instant?>(), typeOf<ByteArray?>(),
                             typeOf<String>(), typeOf<Boolean>(), typeOf<Instant>(), typeOf<ByteArray>(),
+                            typeOf<Int?>(), typeOf<Long?>(), typeOf<Float?>(), typeOf<Double?>(),
                             typeOf<Int>(), typeOf<Long>(), typeOf<Float>(), typeOf<Double>()
                             -> w.write(value)
                             else -> {

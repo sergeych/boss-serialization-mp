@@ -4,6 +4,11 @@
 
 Multiplatform lightweight BOSS format and kotlinx serialization support. Boss codec is completely rewritten in kotlin, providing:
 
+0.1.3-SNAPSHOT:
+- fixed simple nullable types processing with specified KType instance
+- migrated to kotlin 1.7.10 (may break JS IR compatibilty)
+- BREAKING: JS IR ONLY
+
 Stable version: 0.1.2.
 
 - coroutine support: Boss codec uses 'Channel<Byte>' to decode and encode, on every platofrm Very fast.

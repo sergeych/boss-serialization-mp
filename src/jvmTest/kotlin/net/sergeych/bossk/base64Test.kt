@@ -17,7 +17,7 @@ class TestBase64 {
                 assertEquals(Base64.getEncoder().encode(src).decodeToString(), x)
                 assertContentEquals(src, x.decodeBase64())
             }
-            println("round $i")
+//            println("round $i")
         }
     }
 }

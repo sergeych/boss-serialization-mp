@@ -81,9 +81,10 @@ internal class BossCodecTests {
                 println("t failed on $arg")
                 println("encoded: $x")
                 fail("failed to re-encode $arg")
-            } else {
-                println("OK: $x")
             }
+//            else {
+//                println("OK: $x")
+//            }
         } catch (e: Exception) {
             println("failed with exception on $arg")
             println("encoded: $x")
@@ -105,7 +106,7 @@ internal class BossCodecTests {
                 println("encoded: ${x.toDump()} decoded: ${BossDecoder.decodeFrom<T>(cls, x)}")
                 fail("failed to re-encode $arg")
             } else {
-                println("OK KType: $x")
+//                println("OK KType: $x")
             }
         } catch (e: Exception) {
             println("failed with exception on $arg")
@@ -116,7 +117,6 @@ internal class BossCodecTests {
 
     @Test
     fun serializeNested() {
-        println(BossEncoder.encodeToStruct(UBase.U1(42) as UBase))
         t(UBase.U1(42) as UBase)
         t(UBase.U2("foo") as UBase)
         t(VBase.V1(UBase.U1(422), true) as VBase)
@@ -138,10 +138,7 @@ internal class BossCodecTests {
     fun serializeSealed() {
         val x = TTest(listOf(TA(42), TB("Hello")))
         val b = BossEncoder.encode(x)
-        println(b.toDump())
         val y = b.decodeBoss<TTest>()
-        println(y.list[0])
-        println(y.list[1])
         assertEquals(42, (y.list[0] as TA).a)
         assertEquals("Hello", (y.list[1] as TB).b)
     }
@@ -150,10 +147,7 @@ internal class BossCodecTests {
     fun serializeRootList() {
         val x = listOf(TA(42), TB("Hello"))
         val b = BossEncoder.encode(x)
-        println(b.toDump())
         val y = b.decodeBoss<List<TBase>>()
-        println(y[0])
-        println(y[1])
         assertEquals(42, (y[0] as TA).a)
         assertEquals("Hello", (y[1] as TB).b)
     }
@@ -219,7 +213,6 @@ internal class BossCodecTests {
     @Test
     fun serializeRootNull() {
         val x = BossEncoder.encode(null)
-        println(x.toDump())
         val y = x.decodeBoss<TBase?>()
         assertNull(y)
     }
@@ -227,10 +220,21 @@ internal class BossCodecTests {
     @Test
     fun serializeSimpleTypes() {
         val x = BossEncoder.encode("hello")
-        println(x.toDump())
-        println(x.decodeBoss<String>())
         assertEquals("hello", x.decodeBoss<String>())
+    }
 
+    @Test
+    fun serializeStingNullable() {
+        val t = typeOf<String?>()
+        var x: String? = "foo"
+        var encoded = BossEncoder.encode(t, x)
+        var y = BossDecoder.decodeFrom<String?>(t, encoded)
+        assertEquals(x,y)
+
+        x = null
+        encoded = BossEncoder.encode(t, x)
+        y = BossDecoder.decodeFrom<String?>(t, encoded)
+        assertEquals(x,y)
     }
 
 // Not sure whether it is actually needed?

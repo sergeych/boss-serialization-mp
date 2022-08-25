@@ -64,7 +64,7 @@ class StorageTest {
         assertEquals(ser1, nulx)
         s.delete("nulx")
         assertNull(nulx)
-        println("SUCCESS")
+//        println("SUCCESS")
 
         val n2 by optKvStorage<TX>(s, "over")
         assertNull(n2)
