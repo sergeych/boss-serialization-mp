@@ -7,18 +7,22 @@ plugins {
 }
 
 group = "net.sergeych"
-version = "0.1.3-SNAPSHOT"
+version = "0.2.4-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven("https://maven.universablockchain.com")
 }
 
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor(30, "seconds")
-}
+//configurations.all {
+//    resolutionStrategy.cacheChangingModulesFor(30, "seconds")
+//}
 
 kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of("8"))
+    }
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
@@ -61,10 +65,10 @@ kotlin {
                 // we take datetime from mp_stools
 //                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
-                api("com.ionspin.kotlin:bignum:0.3.4")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+                api("com.ionspin.kotlin:bignum:0.3.7")
             }
         }
         val commonTest by getting {

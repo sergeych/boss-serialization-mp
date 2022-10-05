@@ -4,6 +4,8 @@
 
 Multiplatform lightweight BOSS format and kotlinx serialization support. Boss codec is completely rewritten in kotlin, providing:
 
+0.2.* is a branch build for JVM 1.8 for inline compatibility
+
 0.1.3-SNAPSHOT:
 - fixed simple nullable types processing with specified KType instance
 - migrated to kotlin 1.7.10 (may break JS IR compatibilty)
@@ -18,6 +20,56 @@ Due to multiplatform nature it has several differences from java version:
 
 - type for Boss's datetime is `kotlinx.datetime.Instant`: crossplatofrm datetime library.
 - type for Boss's BigInteger is `com.ionspin.kotlin.bignum.integer.BigInteger`: it is multiplatform and as close to java/kotlin BigInteger as I was able to find
+
+## Some nice stuff about BOSS:
+
+- It's binary and very bit-effective!
+
+- it caches strings:
+
+```kotlin
+    @Test
+    fun cacheStringTest() {
+        val x = "foo"
+        println(BossEncoder.encode(x).toDump())
+        println()
+        val y = List(5) { x }
+        println(BossEncoder.encode(y).toDump())
+    }
+```
+
+procudes:
+
+```
+0000 1B 66 6F 6F                                     |.foo            |
+
+0000 0E 2E 1B 66 6F 6F 1D 1D 1D 1D                   |...foo....      |
+
+```
+
+- it caches structures too (to some extent, it reproduces links):
+
+code
+```kotlin
+    @Test
+    fun cacheTest() {
+        val x = Item("bar", 42)
+        println(BossEncoder.encode(x).toDump())
+        println()
+        val y = List(5) { x }
+        println(BossEncoder.encode(y).toDump())
+    }
+```
+
+produces:
+
+```
+0000 17 1B 62 61 72 B8 2A 1B 66 6F 6F 15             |..bar.*.foo.    |
+
+0000 0E 2E 17 1B 62 61 72 B8 2A 1B 66 6F 6F 25 17 25 |....bar.*.foo%.%|
+0010 B8 2A 2D 25 17 25 B8 2A 2D 25 17 25 B8 2A 2D 25 |.*-%.%.*-%.%.*-%|
+0020 17 25 B8 2A 2D 25                               |.%.*-%          |
+```
 
 ## Recent updates
 

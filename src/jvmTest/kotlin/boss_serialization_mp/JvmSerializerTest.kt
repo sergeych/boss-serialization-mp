@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import net.sergeych.boss_serialization.BossDecoder
 import net.sergeych.boss_serialization_mp.*
+import net.sergeych.mptools.toDump
 import net.sergeych.platform.runTest
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -78,5 +79,26 @@ internal class JvmSerializerTest {
         val y = BossDecoder.decodeFrom<Status>(encoded)
 //        println(y)
         assertIs<Status.Fooo>(y)
+    }
+
+    @Serializable
+    data class Item(val foo: String,val bar: Int)
+
+
+    @Test
+    fun cacheTest() {
+        val x = Item("bar", 42)
+        println(BossEncoder.encode(x).toDump())
+        println()
+        val y = List(5) { x }
+        println(BossEncoder.encode(y).toDump())
+    }
+    @Test
+    fun cacheStringTest() {
+        val x = "foo"
+        println(BossEncoder.encode(x).toDump())
+        println()
+        val y = List(5) { x }
+        println(BossEncoder.encode(y).toDump())
     }
 }
