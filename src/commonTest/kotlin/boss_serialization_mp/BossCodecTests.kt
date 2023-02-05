@@ -223,6 +223,17 @@ internal class BossCodecTests {
         assertEquals("hello", x.decodeBoss<String>())
     }
 
+    @Serializable
+    data class WithInstant(val t: Instant, val foo: String)
+    @Test
+    fun serializeInstant() {
+        val w = WithInstant(Clock.System.now().truncateToSeconds(), "bar")
+        val x = BossEncoder.encode(w)
+        println(x.toDump())
+        assertEquals(w.t, x.decodeBoss<WithInstant>().t)
+    }
+
+
     @Test
     fun serializeStingNullable() {
         val t = typeOf<String?>()
@@ -236,6 +247,25 @@ internal class BossCodecTests {
         y = BossDecoder.decodeFrom<String?>(t, encoded)
         assertEquals(x,y)
     }
+
+    @Serializable
+    data class TestStruct(val foo: String)
+
+    // This one fails but should not
+//    @Test
+//    fun serializeStructNullable() {
+//        val src = TestStruct("not null")
+//        val t = typeOf<TestStruct?>()
+//        var x: TestStruct? = src
+//        var encoded = BossEncoder.encode(t, src as TestStruct)
+//        var y = BossDecoder.decodeFrom<TestStruct?>(t, encoded)
+//        assertEquals(x,y)
+//
+//        x = null
+//        encoded = BossEncoder.encode(t, x)
+//        y = BossDecoder.decodeFrom<TestStruct?>(t, encoded)
+//        assertEquals(x,y)
+//    }
 
 // Not sure whether it is actually needed?
 //    @Test fun serializeListOrStruct() {

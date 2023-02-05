@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.sergeych"
-version = "0.2.4-SNAPSHOT"
+version = "0.2.5-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -79,7 +79,11 @@ kotlin {
         }
         val jvmMain by getting {
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation("com.icodici:universa_core:3.14.7")
+            }
+        }
 
         val jsMain by getting {
             dependencies {

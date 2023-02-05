@@ -101,4 +101,17 @@ internal class JvmSerializerTest {
         val y = List(5) { x }
         println(BossEncoder.encode(y).toDump())
     }
+
+    @Serializable
+    data class OldTime(val t: Instant)
+    @Test
+    fun compatibilityTestOldTime() {
+        val x = net.sergeych.boss.Boss.dump(
+            net.sergeych.tools.Binder.of(
+                "t", ZonedDateTime.now()
+            )).toArray()
+        println("${x.toDump()}")
+        val t = BossDecoder.decodeFrom<OldTime>(x)
+        println("--> $t")
+    }
 }
