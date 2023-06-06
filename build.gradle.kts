@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.sergeych"
-version = "0.2.5-SNAPSHOT"
+version = "0.2.6-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -115,10 +115,12 @@ kotlin {
         }
         repositories {
             maven {
+                val mavenUser: String by project
+                val mavenPassword: String by project
                 url = uri("https://maven.universablockchain.com/")
                 credentials {
-                    username = System.getenv("maven_user")
-                    password = System.getenv("maven_password")
+                    username = mavenUser
+                    password = mavenPassword
                 }
             }
         }
