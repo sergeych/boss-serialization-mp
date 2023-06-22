@@ -92,16 +92,17 @@ kotlin {
         }
         val jsTest by getting {
             dependencies {
+                // this version is needed to avoid buggy CCE on EmptySerializerModule - some inconsistency in libraries
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
                 implementation(kotlin("test-js"))
             }
         }
         val nativeMain by getting {
+        }
+        val nativeTest by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
             }
-        }
-        val nativeTest by getting {
         }
     }
 
