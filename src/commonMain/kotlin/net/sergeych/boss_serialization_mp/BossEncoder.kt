@@ -25,7 +25,7 @@ import kotlin.reflect.typeOf
 @ExperimentalSerializationApi
 class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedValueEncoder() {
 
-    override val serializersModule: SerializersModule = EmptySerializersModule()
+    override val serializersModule: SerializersModule = EmptySerializersModule
 
     override fun encodeTaggedNull(tag: String) {
         currentObject[tag] = null
@@ -94,7 +94,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         fun <T : Any> encode(cls: KType, value: T?): ByteArray {
             return Bossk.ByteArrayWriter().also { w ->
                 value?.let {
-                    val serializer = EmptySerializersModule().serializer(cls)
+                    val serializer = EmptySerializersModule.serializer(cls)
                     if( value is List<*>) {
                         val list = mutableListOf<Any?>()
                         BossListEncoder(list).encodeSerializableValue(serializer, value)
@@ -132,7 +132,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
             else
                 BossStruct().also {
                     BossEncoder(it).encodeSerializableValue(
-                        EmptySerializersModule().serializer(cls),
+                        EmptySerializersModule.serializer(cls),
                         value
                     )
                 }
@@ -147,7 +147,7 @@ inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
     if (value is BossStruct)
         write(value)
     else {
-        val serializer: KSerializer<T> = EmptySerializersModule().serializer()
+        val serializer: KSerializer<T> = EmptySerializersModule.serializer()
         when (value) {
             is List<*> -> {
                 val list = mutableListOf<Any?>()
@@ -169,7 +169,7 @@ inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
 @OptIn(ExperimentalSerializationApi::class)
 class BossListEncoder(private val collection: MutableList<Any?>) : AbstractEncoder() {
 
-    override val serializersModule = EmptySerializersModule()
+    override val serializersModule = EmptySerializersModule
 
     override fun encodeValue(value: Any) {
         collection.add(value)
