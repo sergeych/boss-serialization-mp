@@ -152,6 +152,7 @@ internal class BossCodecTests {
         assertEquals("Hello", (y[1] as TB).b)
     }
 
+    @Suppress("unused")
     @Serializable
     class TBytes(val data: ByteArray)
 
@@ -249,23 +250,28 @@ internal class BossCodecTests {
     }
 
     @Serializable
-    data class TestStruct(val foo: String)
+    data class TestStruct(val foo: String?)
 
     // This one fails but should not
-//    @Test
-//    fun serializeStructNullable() {
-//        val src = TestStruct("not null")
-//        val t = typeOf<TestStruct?>()
-//        var x: TestStruct? = src
-//        var encoded = BossEncoder.encode(t, src as TestStruct)
-//        var y = BossDecoder.decodeFrom<TestStruct?>(t, encoded)
-//        assertEquals(x,y)
-//
-//        x = null
-//        encoded = BossEncoder.encode(t, x)
-//        y = BossDecoder.decodeFrom<TestStruct?>(t, encoded)
-//        assertEquals(x,y)
-//    }
+    @Test
+    fun serializeStructNullable() {
+        val src = TestStruct("not null")
+        val t = typeOf<TestStruct?>()
+        var x: TestStruct? = src
+        var encoded = BossEncoder.encode(typeOf<TestStruct?>(), src)
+        var y = BossDecoder.decodeFrom<TestStruct?>(typeOf<TestStruct?>(), encoded)
+        assertEquals(x,y)
+
+        x = null
+        encoded = BossEncoder.encode(t, x)
+        y = BossDecoder.decodeFrom<TestStruct?>(t, encoded)
+        assertEquals(x,y)
+
+        x = TestStruct(null)
+        encoded = BossEncoder.encode(t, x)
+        y = BossDecoder.decodeFrom<TestStruct?>(t, encoded)
+        assertEquals(x,y)
+    }
 
 // Not sure whether it is actually needed?
 //    @Test fun serializeListOrStruct() {

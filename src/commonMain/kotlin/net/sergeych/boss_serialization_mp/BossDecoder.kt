@@ -91,12 +91,11 @@ class BossDecoder(
             bossStructSerializerDescriptor -> {
                 BossStruct(decodeTaggedValue(currentTag) as MutableMap<String, @Contextual Any?>) as T
             }
-            else -> super.decodeSerializableValue(deserializer)
+            else -> {
+                    super.decodeSerializableValue(deserializer)
+            }
         }
     }
-
-    override fun decodeTaggedNotNullMark(tag: String): Boolean =
-        tag in currentObject && currentObject[tag] != null
 
     override fun decodeTaggedEnum(tag: String, enumDescriptor: SerialDescriptor): Int {
         return decodeTaggedInt(tag)
@@ -106,6 +105,7 @@ class BossDecoder(
         checkTagIsStored(tag)
         return currentObject[tag]!!
     }
+
 
     override fun decodeTaggedFloat(tag: String): Float {
         return (decodeTaggedValue(tag) as Number).toFloat()
@@ -123,6 +123,12 @@ class BossDecoder(
         if (tag !in currentObject) throw SerializationException("missing property $tag")
     }
 
+    override fun decodeNotNullMark(): Boolean {
+        currentTagOrNull?.let{
+            return it in currentObject && currentObject[it] != null
+        }
+        return true
+    }
     companion object {
         internal val byteArraySerializerDescriptor = serializer<ByteArray>().descriptor
         internal val bossStructSerializerDescriptor = serializer<BossStruct>().descriptor
@@ -142,9 +148,8 @@ class BossDecoder(
             return when(cls) {
                 typeOf<Map<*, *>>() -> br.read() as T
                 else -> {
-                    val d = EmptySerializersModule.serializer(cls)
-                    val raw = br.read<Any?>()
-                    when(raw) {
+                    val d = EmptySerializersModule().serializer(cls)
+                    when(val raw = br.read<Any?>()) {
                         is List<*> -> {
                             val decoder = BossListDecoder(raw)
                             decoder.decodeSerializableValue(d) as T
@@ -170,7 +175,7 @@ class BossDecoder(
             return when(cls) {
                 typeOf<Map<*, *>>() -> br.read() as T
                 else -> {
-                    val d = EmptySerializersModule.serializer(cls)
+                    val d = EmptySerializersModule().serializer(cls)
                     val raw = br.read<Any?>()
                     when(raw) {
                         is List<*> -> {
@@ -217,7 +222,7 @@ class BossDecoder(
         fun <T> decodeFrom(cls: KType,map: Map<String,Any?>): T {
             if( cls == typeOf<BossStruct>() )
                 return BossStruct(map.toMutableMap<String,Any?>()) as T
-            val d = EmptySerializersModule.serializer(cls)
+            val d = EmptySerializersModule().serializer(cls)
             val decoder = BossDecoder(BossStruct.from(map), d.descriptor)
             return d.deserialize(decoder) as T
         }
@@ -237,7 +242,7 @@ internal class BossListDecoder(
     source: List<Any?>,
 ) : AbstractDecoder() {
 
-    override val serializersModule: SerializersModule = EmptySerializersModule
+    override val serializersModule: SerializersModule = EmptySerializersModule()
 
     private val values = source.iterator()
     private val size = source.size
