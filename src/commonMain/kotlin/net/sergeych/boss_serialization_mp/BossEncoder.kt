@@ -77,7 +77,6 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
     }
 
     override fun encodeNotNullMark() {
-        println("Encode not null mark is not used")
     }
 
     companion object {
