@@ -273,6 +273,15 @@ internal class BossCodecTests {
         assertEquals(x,y)
     }
 
+    @Test
+    fun arrayLong() {
+        val x = listOf(1L, 100L, 0x1FFFFffffL)
+        println(BossEncoder.encode(x).toDump())
+        val y = BossDecoder.decodeFrom<List<Long>>(BossEncoder.encode(x))
+//        val y = BossDecoder.decodeFrom<Long>(BossEncoder.encode(17L))
+//        assertContentEquals(x, y)
+    }
+
 // Not sure whether it is actually needed?
 //    @Test fun serializeListOrStruct() {
 //        return runTest {

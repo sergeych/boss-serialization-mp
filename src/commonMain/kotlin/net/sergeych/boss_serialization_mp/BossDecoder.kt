@@ -4,6 +4,7 @@ package net.sergeych.boss_serialization
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.*
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
@@ -280,7 +281,11 @@ internal class BossListDecoder(
         }
         return when (deserializer.descriptor) {
             BossDecoder.byteArraySerializerDescriptor -> decodeValue() as T
-            else -> super.decodeSerializableValue(deserializer)
+            // Boss loses integer length, so we need to process it specially:
+            longDescriptor, intDescriptor -> decodeValue() as T
+            else -> {
+                super.decodeSerializableValue(deserializer)
+            }
         }
     }
 
@@ -293,5 +298,10 @@ internal class BossListDecoder(
             StructureKind.LIST -> BossListDecoder(values.next() as List<Any?>)
             else -> throw SerializationException("unsupported kind: ${descriptor.kind}")
         }
+    }
+
+    companion object {
+        val longDescriptor = serializer<Long>().descriptor
+        val intDescriptor = serializer<Int>().descriptor
     }
 }
