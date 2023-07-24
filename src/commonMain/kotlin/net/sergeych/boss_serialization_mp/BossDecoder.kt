@@ -13,6 +13,7 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.internal.NamedValueDecoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
+import net.sergeych.boss_serialization.BossDecoder.Companion.byteArraySerializerDescriptor
 import net.sergeych.boss_serialization.BossDecoder.Companion.decodeFrom
 import net.sergeych.boss_serialization_mp.BossStruct
 import net.sergeych.bossk.Bossk
@@ -280,9 +281,9 @@ internal class BossListDecoder(
             }
         }
         return when (deserializer.descriptor) {
-            BossDecoder.byteArraySerializerDescriptor -> decodeValue() as T
             // Boss loses integer length, so we need to process it specially:
-            longDescriptor, intDescriptor -> decodeValue() as T
+            byteArraySerializerDescriptor,
+            longDescriptor, intDescriptor, floatDescriptor, doubleDescriptor -> decodeValue() as T
             else -> {
                 super.decodeSerializableValue(deserializer)
             }
@@ -303,5 +304,7 @@ internal class BossListDecoder(
     companion object {
         val longDescriptor = serializer<Long>().descriptor
         val intDescriptor = serializer<Int>().descriptor
+        val floatDescriptor = serializer<Float>().descriptor
+        val doubleDescriptor = serializer<Double>().descriptor
     }
 }

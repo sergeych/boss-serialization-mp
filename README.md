@@ -4,19 +4,16 @@
 
 Multiplatform lightweight BOSS format and kotlinx serialization support. Boss codec is completely rewritten in kotlin, providing:
 
+> stable version: __0.2.10__
+
+It contains an important fix on serlalizing affays of primitive types (due to BOSS erasure of int/long type)
+
 0.2.* is a branch build for JVM 1.8 for inline compatibility
 
-0.1.3-SNAPSHOT:
-- fixed simple nullable types processing with specified KType instance
-- migrated to kotlin 1.7.10 (may break JS IR compatibilty)
-- BREAKING: JS IR ONLY
-
-Stable version: 0.1.2.
-
-- coroutine support: Boss codec uses 'Channel<Byte>' to decode and encode, on every platofrm Very fast.
+- coroutine support: Boss codec uses 'Channel<Byte>' to decode and encode, on every platform Very fast.
 - no more big dependencies!
 
-Due to multiplatform nature it has several differences from java version:
+Due to multiplatform nature, it has several differences from java version:
 
 - type for Boss's datetime is `kotlinx.datetime.Instant`: crossplatofrm datetime library.
 - type for Boss's BigInteger is `com.ionspin.kotlin.bignum.integer.BigInteger`: it is multiplatform and as close to java/kotlin BigInteger as I was able to find
