@@ -22,10 +22,9 @@ import kotlin.reflect.typeOf
  * or extension function on [Bossk.Writer]
  */
 @OptIn(InternalSerializationApi::class)
-@ExperimentalSerializationApi
 class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedValueEncoder() {
 
-    override val serializersModule: SerializersModule = EmptySerializersModule
+    override val serializersModule: SerializersModule = EmptySerializersModule()
 
     override fun encodeTaggedNull(tag: String) {
         currentObject[tag] = null
@@ -83,7 +82,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         // IMPORTANT!! NOTE: <reified T : Any> is a temorary workaround of the stupid js compiler bug!
 
         /**
-         * Encode some `@Serializable` value to a packed binary boss data
+         * Encode some `@Serializable` value to packed binary boss data
          */
         inline fun <reified T : Any> encode(value: T?): ByteArray =
             Bossk.ByteArrayWriter().also { w ->
@@ -93,7 +92,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
         fun <T : Any> encode(cls: KType, value: T?): ByteArray {
             return Bossk.ByteArrayWriter().also { w ->
                 value?.let {
-                    val serializer = EmptySerializersModule.serializer(cls)
+                    val serializer = EmptySerializersModule().serializer(cls)
                     if( value is List<*>) {
                         val list = mutableListOf<Any?>()
                         BossListEncoder(list).encodeSerializableValue(serializer, value)
@@ -131,7 +130,7 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
             else
                 BossStruct().also {
                     BossEncoder(it).encodeSerializableValue(
-                        EmptySerializersModule.serializer(cls),
+                        EmptySerializersModule().serializer(cls),
                         value
                     )
                 }
@@ -139,14 +138,14 @@ class BossEncoder(private val currentObject: MutableMap<String, Any?>) : NamedVa
 }
 
 /**
- * Encode and write object to a `Boss.Writer`
+ * Encode and write an object to a `Boss.Writer`
  */
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
     if (value is BossStruct)
         write(value)
     else {
-        val serializer: KSerializer<T> = EmptySerializersModule.serializer()
+        val serializer: KSerializer<T> = EmptySerializersModule().serializer()
         when (value) {
             is List<*> -> {
                 val list = mutableListOf<Any?>()
@@ -168,7 +167,7 @@ inline fun <reified T> Bossk.Writer.encode(value: T): Bossk.Writer {
 @OptIn(ExperimentalSerializationApi::class)
 class BossListEncoder(private val collection: MutableList<Any?>) : AbstractEncoder() {
 
-    override val serializersModule = EmptySerializersModule
+    override val serializersModule = EmptySerializersModule()
 
     override fun encodeValue(value: Any) {
         collection.add(value)

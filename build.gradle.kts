@@ -1,13 +1,16 @@
 @file:Suppress("UNUSED_VARIABLE")
 
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+
+
 plugins {
-    kotlin("multiplatform") version "1.7.21"
-    kotlin("plugin.serialization") version "1.7.21"
+    kotlin("multiplatform") version "1.9.23"
+    kotlin("plugin.serialization") version "1.9.24"
     `maven-publish`
 }
 
 group = "net.sergeych"
-version = "0.2.10"
+version = "0.3.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -24,42 +27,46 @@ kotlin {
         languageVersion.set(JavaLanguageVersion.of("8"))
     }
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
-            kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
-        }
         withJava()
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
         }
     }
     js(IR) {
-        compilations.all {
-            kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
-        }
-        browser {
-        }
+        browser()
+        nodejs()
 //        useCommonJs()
     }
 
-    val hostOs = System.getProperty("os.name")
-    if( hostOs == "Mac OS X")
-        ios()
-
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs()
     }
+//    linuxX64("native")
 
-    val publicationsFromMainHost =
-        listOf(jvm(), js()).map { it.name } + "kotlinMultiplatform"
+//    val hostOs = System.getProperty("os.name")
+//    if( hostOs == "Mac OS X")
+//        ios()
+//
+//    val isMingwX64 = hostOs.startsWith("Windows")
+//    val nativeTarget = when {
+//        hostOs == "Mac OS X" -> macosX64("native")
+//        hostOs == "Linux" -> linuxX64("native")
+//        isMingwX64 -> mingwX64("native")
+//        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+//    }
+
+//    val publicationsFromMainHost =
+//        listOf(jvm(), js()).map { it.name } + "kotlinMultiplatform"
 
     sourceSets {
         all {
-            languageSettings.optIn("kotlin.RequiresOptIn")
+//            languageSettings.optIn("kotlin.RequiresOptIn")
+                languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
+                languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+//                languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+
         }
         val commonMain by getting {
             dependencies {
@@ -67,10 +74,9 @@ kotlin {
                 // we take datetime from mp_stools
 //                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.1")
 //                api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-                api("com.ionspin.kotlin:bignum:0.3.7")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3")
+                api("com.ionspin.kotlin:bignum:0.3.9")
             }
         }
         val commonTest by getting {
@@ -97,29 +103,29 @@ kotlin {
                 implementation(kotlin("test-js"))
             }
         }
-        val nativeMain by getting {
-        }
-        val nativeTest by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-            }
-        }
+//        val nativeMain by getting {
+//        }
+//        val nativeTest by getting {
+//            dependencies {
+//                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+//            }
+//        }
     }
 
     publishing {
-        publications {
-
-            matching { it.name in publicationsFromMainHost }.all {
-                val targetPublication = this@all
-                tasks.withType<AbstractPublishToMaven>()
-                    .matching { it.publication == targetPublication }
-                    .configureEach { onlyIf { findProperty("isMainHost") == "true" } }
-            }
-
-//            create<MavenPublication>("maven") {
-//                from(components["java"])
+//        publications {
+//
+//            matching { it.name in publicationsFromMainHost }.all {
+//                val targetPublication = this@all
+//                tasks.withType<AbstractPublishToMaven>()
+//                    .matching { it.publication == targetPublication }
+//                    .configureEach { onlyIf { findProperty("isMainHost") == "true" } }
 //            }
-        }
+//
+////            create<MavenPublication>("maven") {
+////                from(components["java"])
+////            }
+//        }
         repositories {
             maven {
                 val mavenUser: String by project
@@ -135,3 +141,13 @@ kotlin {
 }
 
 
+//    listOf(
+//        iosX64(),
+//        iosArm64(),
+//        iosSimulatorArm64()
+//    ).forEach { iosTarget ->
+//        iosTarget.binaries.framework {
+//            baseName = "ComposeApp"
+//            isStatic = true
+//        }
+//    }
